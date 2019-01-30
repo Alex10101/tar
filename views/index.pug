@@ -1,0 +1,14 @@
+doctype html
+html
+    head
+        meta(name="viewport" content="width=device-width, initial-scale=1")
+        link(rel="stylesheet" href="./style.css")
+    body
+
+        form(method='POST' action='/files' encType="multipart/form-data")
+            input(type='file', placeholder='add', name='file', required)
+            button(type='submit') Add
+
+
+        div.container
+            p #{items}

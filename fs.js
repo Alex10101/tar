@@ -1,13 +1,13 @@
-const fs = require('fs')
+// head -10 bar.txt
+// tar -tvf 1.tar.gz | head -5 1.txt
+// ls -lh
 
-let foo
+const util = require('util');
+const fs = require('fs');
+const { exec } = require('child_process');
 
-fs.readdir('./files', (cb, files) => {
-	foo = files
-})
+const stat = util.promisify(fs.readdir);
 
-let file = 'server.js'
 
-fs.stat(file, (err, stat) => {
-    console.log(stat.size / 1000000.0 + ".Mb")
-})
+
+module.exports = stat

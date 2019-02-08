@@ -17,7 +17,6 @@ read = (path, callback) => {
 
 				head = p.substr(0, tail)
 				tail = p.substr(tail + 1)
-				// console.log(head, tail)
 
 			// if file or folder in tar
 			return exec(`${cd} tar -tvf ${head} | head -10 ${tail}`, callback)

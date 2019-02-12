@@ -5,6 +5,14 @@ readline = (path, count) => {
 	  input: stream
 	});
 
+	let promise = new Promise((res, rej) => {
+		stream.on('error', (err) => {
+			res(err)
+		})
+		rl.on('close', () => {
+			res(arr)
+		})
+	})
 
 	let from = 0
 	let to = count || 100
@@ -16,16 +24,8 @@ readline = (path, count) => {
 		}
 		from++
 		arr.push(line)
-	  // console.log('Line ' + from + " console.log():", line);
 	});
-
-	return new Promise((res, rej) => {
-		rl.on('close', () => {
-			res(arr)
-		})
-	})
-	
+	return promise	
 }
 
-// readline('./tmp/1/1.txt').then((arr) => console.log(arr))
 module.exports = readline

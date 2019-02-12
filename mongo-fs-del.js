@@ -26,7 +26,7 @@ cb = (err, client) => {
 
 	let find = {
 		timestamp : {
-			$lt : new Date().getMinutes(),
+			$lt : new Date().getTime(),
 			$ne: "Null"
 		}
 	}

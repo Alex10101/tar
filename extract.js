@@ -27,5 +27,4 @@ extract = (path, cb) => {
 	exec(`${cd} tar -xzvf  ${path} -C ../tmp --keep-old-files `, cb)
 }
 
-// extract('2.tar.gz')
 module.exports = extract

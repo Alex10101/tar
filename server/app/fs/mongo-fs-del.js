@@ -6,10 +6,10 @@ const url = process.env.DB_URI
 const connection = MongoClient.connect
 
 cb = (err, client) => {
-	const db = client.db().collection('files');
 	if(err) {
 		throw err
 	}
+	const db = client.db().collection('files');
 
 	remove = (arr) => {
 		arr.map((item) => {

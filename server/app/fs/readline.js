@@ -14,7 +14,7 @@ readline = (path, count) => {
 		})
 	})
 
-	let from = 0
+	let from = 10
 	let to = count || 100
 	let arr = []
 

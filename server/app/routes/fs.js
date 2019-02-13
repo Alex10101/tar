@@ -1,6 +1,6 @@
 const app = require('express');
 const router = app.Router();
-const fs = require('fs')
+const fs = require('fs');
 const pt  = require('path');
 
 // Executes tar -xzvf  ${path} -C ../tmp --keep-old-files
@@ -13,16 +13,18 @@ const readline = require('../fs/readline.js');
 // Removes expired files and exports database.
 const mongo = require('../fs/mongo-fs-del.js');
 
-const home  = pt.join(__dirname,'..','..');
+const home  = pt.join(__dirname, '..', '..');
 const public = pt.join(home, 'public');
 const files = pt.join(public, 'files');
 const temp = pt.join(public, 'tmp');
 
 router.get('/', (req, res) => {
-	mongo(function(err, client) {
+	let skip = Number(req.body.skip || req.query.skip || 0);
+	let limit = Number(req.body.limit || req.query.limit || 10);
+	mongo((err, client) => {
 	  if (err) throw err;
 	  let db = client.db();
-	  db.collection("files").find().toArray(function(err, data) {
+	  db.collection("files").find().skip(skip).limit(limit).toArray(function(err, data) {
 	    if (err) throw err;
 	    res.send(data);
 	    client.close();
@@ -31,9 +33,10 @@ router.get('/', (req, res) => {
 	})
 });
 
+
 router.get('/tmp', (req, res) => {
-	if(req.body.path) {
-		let p = req.body.path
+	let p = req.body.path || req.query.path || null
+	if(p) {		
 		if(p.indexOf('.') > 1) {
 			readline(temp + p).then((data, err) => {
 				if(err) throw err
@@ -70,42 +73,50 @@ router.get('/extract', (req, res) => {
 })
 
 router.post('/', (req, res) => {
-	if(typeof req.files == 'undefined') {
-		res.status(405).send("Cant't read file in req.file")
+	let file = req.files
+	if(!file) {
+		res.status(405).send({ err : "Can't find pinned file" })
 		return
 	}
-	let filename = req.body.filename || req.files.file.name;
+	let filename = req.body.filename || file.file.name;
 
-	if(!fs.existsSync(path + filename)) {
+	if(!fs.existsSync(files + filename)) {
 		mongo((err, client) => {
-			let db = client.db().collection('files')
-			let b = req.body
-			let exp = b.expire
-			let item = {
-				title: b.title || undefined,
-				filename : filename,
-				description: b.description || undefined,
-				expire : exp || undefined,
-				timestamp : new Date(exp).getTime() || undefined
+			let db = client.db().collection('files');
+
+			function insert() {
+				let b = req.body
+				let exp = b.expire
+				let item = {
+					title: b.title || undefined,
+					filename : filename,
+					description: b.description || undefined,
+					expire : exp || undefined,
+					timestamp : new Date(exp).getTime() || undefined
+				}
+				db.insertOne(item)
+				req.files.file.mv(files + '/' + filename)
+				let n = String.fromCharCode(13, 10)
+				res.send(`
+					${filename} uploaded 
+					
+					item inserted ${JSON.stringify(item)}
+				`)
+
+				client.close()
 			}
-			db.find(item).toArray(function(err, data) {
-			    if (err) throw err;
-			    if(data) {
-			    	res.send(data)
-			    	client.close();
+
+		 	db.find({title: req.body.title}).toArray((err, data) => {
+			    if(data.length > 0) {
+			    	res.send({
+			    		err : 'title exist',
+			    		at_files: data
+			    	})
 			    	return
 			    }
+			    insert()
+			    return 			    
 			});
-			db.insertOne(item)
-			req.files.file.mv(files + filename)
-			let n = String.fromCharCode(13, 10)
-			res.send(`
-				${filename} uploaded 
-				
-				item inserted ${JSON.stringify(item)}
-			`)
-
-			client.close()
 		})
 		return		
  	}

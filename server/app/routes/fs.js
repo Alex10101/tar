@@ -1,67 +1,64 @@
-const app = require('express')();
-const bodyParser = require('body-parser');
-const fileUpload = require('express-fileupload');
-const fs = require('fs');
-
-app.use(bodyParser.urlencoded({ extended: true }));
-app.use(bodyParser.json());
-app.use(fileUpload());
+const app = require('express');
+const router = app.Router();
+const fs = require('fs')
+const pt  = require('path');
 
 // Executes tar -xzvf  ${path} -C ../tmp --keep-old-files
-const extract = require('./extract.js');
+const extract = require('../fs/extract.js');
 
 // Just readline.createInterface.
-const readline = require('./readline.js');
+const readline = require('../fs/readline.js');
 
 // This is the file for cron.
 // Removes expired files and exports database.
-const mongo = require('./mongo-fs-del.js');
+const mongo = require('../fs/mongo-fs-del.js');
 
+const home  = pt.join(__dirname,'..','..');
+const public = pt.join(home, 'public');
+const files = pt.join(public, 'files');
+const temp = pt.join(public, 'tmp');
 
-const path = './files/';
-const temp = './tmp';
-
-app.get('/', (req, res) => {
+router.get('/', (req, res) => {
 	mongo(function(err, client) {
 	  if (err) throw err;
 	  let db = client.db();
-	  db.collection("files").find({}).toArray(function(err, data) {
+	  db.collection("files").find().toArray(function(err, data) {
 	    if (err) throw err;
-	    res.send(data)
+	    res.send(data);
 	    client.close();
 	    return
 	  });
 	})
 });
 
-app.get('/tmp', (req, res) => {
+router.get('/tmp', (req, res) => {
 	if(req.body.path) {
 		let p = req.body.path
 		if(p.indexOf('.') > 1) {
 			readline(temp + p).then((data, err) => {
-				if(err) {
-					res.send('Temp directory is empty')
+				if(err) throw err
+				if(data.errno) {
+					res.send(data)
 					return
 				}
 				res.send(data)
 			})
 			return
-		} else {
-			console.log(data)
-			res.send(data)
-			return
-		}
+		} 
+
 		fs.readdir(temp + p, (err, data) => {
 			res.send(data)
 		})
 		return
 	}
+
 	fs.readdir(temp, (err, data) => {
+		if(err) console.log(err)
 		res.send(data)
 	})
 })
 
-app.get('/extract', (req, res) => {
+router.get('/extract', (req, res) => {
 	extract(req.body.path, (error, stdout, stderr) => {
 		  if (error) {
 		    res.send(error)
@@ -72,7 +69,7 @@ app.get('/extract', (req, res) => {
 	)
 })
 
-app.post('/', (req, res) => {
+router.post('/', (req, res) => {
 	if(typeof req.files == 'undefined') {
 		res.status(405).send("Cant't read file in req.file")
 		return
@@ -100,7 +97,7 @@ app.post('/', (req, res) => {
 			    }
 			});
 			db.insertOne(item)
-			req.files.file.mv(path + filename)
+			req.files.file.mv(files + filename)
 			let n = String.fromCharCode(13, 10)
 			res.send(`
 				${filename} uploaded 
@@ -115,82 +112,84 @@ app.post('/', (req, res) => {
 
  	res.send(`Name ${filename} exist 
 
- 	 Stats : ${JSON.stringify(fs.statSync(path + filename))}
+ 	 Stats : ${JSON.stringify(fs.statSync(files + filename))}
  	`)
 });
 
-app.put('/', (req, res) => {
+router.put('/', (req, res) => {
 	try {
 	   	JSON.parse(req.body.change_from)
 		JSON.parse(req.body.change_to)
-	} catch (e) {
-	    res.send(e)
+	} catch (err) {
+    	res.send({
+			message : "Can't read the data",
+			change_from : req.body.change_from || "Null",
+			change_to : req.body.change_to || "Null"
+		})
 	    return
 	}
 
 	let from = JSON.parse(req.body.change_from)
 	let to = JSON.parse(req.body.change_to)
-	let by = req.body.search_by
+	let by = to.search_by
 	let search_by = from
+
 	if(by) {
-		search_by = { [by] : from[by] }
+		search_by = {}
+		by.map((item) => {
+			search_by[item] = from[item]
+		})		
 	}
 
-	if(from && to) {
-		mongo((err, client) => { 
+	mongo((err, client) => { 
+		if(err) throw err
+		let db = client.db().collection('files')
+		db.find(search_by).toArray((err, data) => {
+			update = (file, data) => {
+				
+			}
 			if(err) throw err
-			let db = client.db().collection('files')
-			db.find(search_by).toArray((err, data) => {
-				update = (file, data) {
-					
-				}
-				if(err) throw err
-				if(data.length < 1) {
-					res.send(`
-						Can't find in database :
-						${JSON.stringify(from)}
-					`)
+			if(data.length < 1) {
+				res.send(`
+					Can't find in database :
+					${JSON.stringify(from)}
+				`)
+				return
+			} else if(data.length > 1) {
+				let i = req.body.specify || undefined
+				if(i) {
+					//change 1
+					res.send(data[i])
 					return
-				} else if(data.length > 1) {
-					let i = req.body.specify || undefined
-					if(i) {
-						res.send(data[i])
-						return
-					} else {
-						res.send(`
-							Please specify the target at req.body.specify :
-
-							${JSON.stringify(data)}
-						`)
-						return
-					}
 				} else {
-					if(by) {
-						db.update({}, { $set: { dateField: new Date(2011, 0, 1)}}, false, true);
-					}
-					// db.update({condField: 'condValue'}, { $set: { dateField: new Date(2011, 0, 1)}}, false, true);
-					res.send(data)
+					res.send({
+						message : "Please specify the target at req.body.specify : ",
+						data : JSON.stringify(data)
+					})
 					return
 				}
-				console.log(data)
+			} else {
+				if(by) {
+					// change 2
+					db.update({}, { $set: { dateField: new Date(2011, 0, 1)}}, false, true);
+				}
+				// db.update({condField: 'condValue'}, { $set: { dateField: new Date(2011, 0, 1)}}, false, true);
 				res.send(data)
-							
-			})
-
+				return
+			}
+			console.log(data)
+			// change 3
+			res.send(data)
+						
 		})
-		return
-	}
-	res.send(`Can't read the data :
-		change_from : ${from}
 
-		change_to : ${to}
-	`)
+	})
 })
 
-app.delete('/', (req, res) => {
+router.delete('/', (req, res) => {
 	if(req.body.path) {
 		let r = req.body.path
-		let p = path + req.body.path
+		let p = files + req.body.path
 		if(fs.existsSync(p)) {
 			fs.unlink(p, (err) => {
 				if(err) throw err
@@ -204,8 +203,8 @@ app.delete('/', (req, res) => {
 	res.send(req.body.path + ' is not defined')
 })
 
-app.use(function(req, res, next) {
+router.use(function(req, res, next) {
   res.redirect('/')
 });
 
-app.listen(3000);
+module.exports = router

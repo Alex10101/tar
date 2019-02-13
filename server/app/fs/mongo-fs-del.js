@@ -1,13 +1,14 @@
 const fs = require('fs')
 
+require('dotenv').config();
 const MongoClient = require('mongodb').MongoClient;
-const url = 'mongodb://dan:dan123@ds127115.mlab.com:27115/tar'
+const url = process.env.DB_URI
 const connection = MongoClient.connect
 
 cb = (err, client) => {
 	const db = client.db().collection('files');
 	if(err) {
-		console.log(err)
+		throw err
 	}
 
 	remove = (arr) => {

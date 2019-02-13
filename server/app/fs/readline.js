@@ -25,7 +25,7 @@ readline = (path, count) => {
 		from++
 		arr.push(line)
 	});
-	return promise	
+	return promise
 }
 
 module.exports = readline

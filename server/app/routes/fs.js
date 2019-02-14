@@ -75,7 +75,6 @@ router.get('/extract', (req, res) => {
 	)
 })
 
-
 router.post('/', (req, res) => {
 	let file = req.files
 	if(!file) {

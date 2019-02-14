@@ -11,7 +11,7 @@ const readline = require('../fs/readline.js');
 
 // This is the file for cron.
 // Removes expired files and exports database.
-const mongo = require('../fs/mongo-fs-del.js');
+const { mongo, ObjectId } = require('../fs/mongo-fs-del.js');
 
 const home  = pt.join(__dirname, '..', '..');
 const public = pt.join(home, 'public');
@@ -19,12 +19,15 @@ const files = pt.join(public, 'files');
 const temp = pt.join(public, 'tmp');
 
 router.get('/', (req, res) => {
-	let skip = Number(req.body.skip || req.query.skip || 0);
-	let limit = Number(req.body.limit || req.query.limit || 10);
+	let b = req.body
+	let q = req.query
+	let skip = Number(b.skip || q.skip || 0);
+	let limit = Number(b.limit || q.limit || 10);
+	let search_by = (b.search_by || q.search_by || {})
 	mongo((err, client) => {
 	  if (err) throw err;
 	  let db = client.db();
-	  db.collection("files").find().skip(skip).limit(limit).toArray(function(err, data) {
+	  db.collection("files").find(search_by).skip(skip).limit(limit).toArray((err, data) => {
 	    if (err) throw err;
 	    res.send(data);
 	    client.close();
@@ -64,13 +67,14 @@ router.get('/tmp', (req, res) => {
 router.get('/extract', (req, res) => {
 	extract(req.body.path, (error, stdout, stderr) => {
 		  if (error) {
-		    res.send(error)
+		    res.send({ err : error })
 		    return;
 		  }
 		  res.redirect('/tmp')
 		}
 	)
 })
+
 
 router.post('/', (req, res) => {
 	let file = req.files
@@ -96,12 +100,12 @@ router.post('/', (req, res) => {
 				}
 				db.insertOne(item)
 				req.files.file.mv(files + '/' + filename)
-				let n = String.fromCharCode(13, 10)
-				res.send(`
-					${filename} uploaded 
-					
-					item inserted ${JSON.stringify(item)}
-				`)
+				res.send({ 
+					msg : { 
+						uploaded : filename,
+						inserted : JSON.stringify(item)
+					}
+				})
 
 				client.close()
 			}
@@ -121,80 +125,59 @@ router.post('/', (req, res) => {
 		return		
  	}
 
- 	res.send(`Name ${filename} exist 
-
- 	 Stats : ${JSON.stringify(fs.statSync(files + filename))}
- 	`)
+ 	res.send({
+ 		err : `Name ${filename} exist`,
+ 		stats : JSON.stringify(fs.statSync(files + filename))
+ 	}) 
 });
 
 router.put('/', (req, res) => {
+	let id = req.body.id
+	let put = req.body.put
 	try {
-	   	JSON.parse(req.body.change_from)
-		JSON.parse(req.body.change_to)
-	} catch (err) {
-    	res.send({
-			message : "Can't read the data",
-			change_from : req.body.change_from || "Null",
-			change_to : req.body.change_to || "Null"
+		JSON.parse(put)
+	} catch(err) {
+		res.send({
+			err : err,
+			item : req.body
 		})
-	    return
+		return
+	}
+	if(!id && !put) {
+		res.send({
+			err: 'Wrong data',
+			msg : req.body
+		})
+		return
 	}
 
-	let from = JSON.parse(req.body.change_from)
-	let to = JSON.parse(req.body.change_to)
-	let by = to.search_by
-	let search_by = from
+	mongo((err, client) => {
+		let db = client.db().collection('files');
+		db.findOneAndUpdate(
+		{ 
+			_id : new ObjectId(id)
+		}, 
 
-	if(by) {
-		search_by = {}
-		by.map((item) => {
-			search_by[item] = from[item]
-		})		
-	}
+		{
+			// $set: put & $set : { put }
+			// inserts { put: { title: '123' } }
+			//     instead of { title: '123' }
+			$set: JSON.parse(req.body.put) 
+		}, 
 
-	mongo((err, client) => { 
-		if(err) throw err
-		let db = client.db().collection('files')
-		db.find(search_by).toArray((err, data) => {
-			update = (file, data) => {
-				
-			}
+		{ 
+			returnNewDocument: true 
+		}, 
+
+		(err, data) => {
 			if(err) throw err
-			if(data.length < 1) {
-				res.send(`
-					Can't find in database :
-					${JSON.stringify(from)}
-				`)
-				return
-			} else if(data.length > 1) {
-				let i = req.body.specify || undefined
-				if(i) {
-					//change 1
-					res.send(data[i])
-					return
-				} else {
-					res.send({
-						message : "Please specify the target at req.body.specify : ",
-						data : JSON.stringify(data)
-					})
-					return
-				}
-			} else {
-				if(by) {
-					// change 2
-					db.update({}, { $set: { dateField: new Date(2011, 0, 1)}}, false, true);
-				}
-				// db.update({condField: 'condValue'}, { $set: { dateField: new Date(2011, 0, 1)}}, false, true);
-				res.send(data)
-				return
-			}
-			console.log(data)
-			// change 3
-			res.send(data)
-						
-		})
-
+			res.send({
+				msg : 'updated',
+				data : data.value
+			})	
+		})	
 	})
+
 })
 
 router.delete('/', (req, res) => {
@@ -208,10 +191,10 @@ router.delete('/', (req, res) => {
 			})
 			return
 		}
-		res.send(r + ' not found')
+		res.send({ err : r + ' not found' })
 		return
 	}
-	res.send(req.body.path + ' is not defined')
+	res.send({ err : req.body.path + ' is not defined'})
 })
 
 router.use(function(req, res, next) {

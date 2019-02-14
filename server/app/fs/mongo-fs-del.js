@@ -2,6 +2,7 @@ const fs = require('fs')
 
 require('dotenv').config();
 const MongoClient = require('mongodb').MongoClient;
+const ObjectId = require('mongodb').ObjectID;
 const url = process.env.DB_URI
 const connection = MongoClient.connect
 
@@ -47,4 +48,7 @@ connect = (callback) => {
 
 connect(cb)
 
-module.exports = connect
+module.exports = {
+	mongo: connect,
+	ObjectId : ObjectId
+}

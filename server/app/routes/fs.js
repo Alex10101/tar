@@ -89,7 +89,18 @@ router.post('/', (req, res) => {
 	}
 
 	let data = JSON.parse(req.body.data)
-	let filename = data.filename || file.file.name;
+	let filename = data.specify || file.file.name;
+
+	let spec = data.specify
+	if(spec) {
+		let i = spec.indexOf('.')
+		if(i > -1) {
+			let head = spec.substr(0, i)
+			let tail = file.file.name.substr(file.file.name.indexOf('.'))
+			filename = head + tail
+		}
+	}
+
 	let path = pt.join(filesDir, filename);
 
 	function post() {

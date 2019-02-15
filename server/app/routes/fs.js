@@ -2,16 +2,9 @@ const app = require('express');
 const router = app.Router();
 const fs = require('fs');
 const pt  = require('path');
-const formidable = require('formidable');
 
-// Executes tar -xzvf  ${path} -C ../tmp --keep-old-files
 const extract = require('../fs/extract.js');
-
-// Just readline.createInterface.
 const readline = require('../fs/readline.js');
-
-// This is the file for cron.
-// Removes expired files and exports database.
 const { mongo, ObjectId } = require('../fs/mongo-fs-del.js');
 
 const home  = pt.join(__dirname, '..', '..');
@@ -20,11 +13,10 @@ const filesDir = pt.join(public, 'files');
 const temp = pt.join(public, 'tmp');
 
 router.get('/', (req, res) => {
-	let b = req.body
-	let q = req.query
-	let skip = Number(b.skip || q.skip || 0);
-	let limit = Number(b.limit || q.limit || 10);
-	let search_by = (b.search_by || q.search_by || {})
+	let get = (name, Null) => req.body[name] || req.query[name] || Null;
+	let skip = Number(get('skip', 0));
+	let limit = Number(get('limit', 10));
+	let search_by = get('search_by', {});
 	mongo((err, client) => {
 	  if (err) throw err;
 	  let db = client.db();
@@ -38,13 +30,16 @@ router.get('/', (req, res) => {
 });
 
 router.get('/tmp', (req, res) => {
-	let path = req.body.path || req.query.path || null
+	let get = (name) => req.body[name] || req.query[name] || null;
+	let path = get('path');
+	let from = get('from');
+	let to   = get('to');
 	if(path) {		
 		if(path.indexOf('.') > 1) {
-			readline(temp + path).then((data, err) => {
-				if(err) throw err
+			readline(temp + path, from, to).then((data, err) => {
+				if(err) throw err;
 				if(data.errno) {
-					res.send(data)
+					res.send(data);
 					return
 				}
 				res.send({
@@ -63,41 +58,41 @@ router.get('/tmp', (req, res) => {
 	}
 
 	fs.readdir(temp, (err, data) => {
-		if(err) console.log(err)
+		if(err) console.log(err);
 		res.send({
 			tmp_folder : data
 		})
 	})
 })
 
-router.get('/extract', (req, res) => {
+router.put('/extract', (req, res) => {
 	extract(req.body.path, (error, stdout, stderr) => {
 		  if (error) {
 		    res.send({ err : error })
-		    return;
+		    return
 		  }
-		  res.redirect('/tmp')
+		  res.redirect('/tmp');
 		}
 	)
 })
 
 router.post('/', (req, res) => {
-	let file = req.files
+	let file = req.files;
 	if(!file) {
 		res.status(405).send({ err : "Can't find pinned file" })
 		return
 	}
 
-	let data = JSON.parse(req.body.data)
+	let data = JSON.parse(req.body.data);
 	let filename = data.specify || file.file.name;
 
-	let spec = data.specify
+	let spec = data.specify;
 	if(spec) {
-		let i = spec.indexOf('.')
+		let i = spec.indexOf('.');
 		if(i > -1) {
-			let head = spec.substr(0, i)
-			let tail = file.file.name.substr(file.file.name.indexOf('.'))
-			filename = head + tail
+			let head = spec.substr(0, i);
+			let tail = file.file.name.substr(file.file.name.indexOf('.'));
+			filename = head + tail;
 		}
 	}
 
@@ -116,16 +111,16 @@ router.post('/', (req, res) => {
 					timestamp : new Date(data.expired).getTime() || undefined
 				}
 
-				db.insertOne(item)
+				db.insertOne(item);
 				req.files.file.mv(path, (err) => {
-					if(err) throw err
+					if(err) throw err;
 					res.send({ 
 						msg : { 
 							uploaded : filename,
 							inserted : item
 							}
 					})
-					client.close()
+					client.close();
 				})
 			}
 
@@ -137,11 +132,11 @@ router.post('/', (req, res) => {
 			    	})
 			    	return
 			    }
-			    insert()
-			    client.close()
-			    return 			    
+			    insert();
+			    client.close();
+			    return    
 			});
-		})
+		});
 		return
 	}
 	fs.exists(path, (err) => {
@@ -151,14 +146,14 @@ router.post('/', (req, res) => {
 		 		stats : fs.statSync(path)
 		 	})
 		} else {
-			post()
+			post();
 		}
 	})
 });
 
 router.put('/', (req, res) => {
-	let id = req.body.id
-	let put = JSON.parse(req.body.put)
+	let id = req.body.id;
+	let put = JSON.parse(req.body.put);
 
 	if(!id && !put) {
 		res.send({
@@ -171,18 +166,9 @@ router.put('/', (req, res) => {
 	mongo((err, client) => {
 		let db = client.db().collection('files');
 		db.findOneAndUpdate(
-		{ 
-			_id : new ObjectId(id)
-		}, 
-
-		{
-			$set: put
-		}, 
-
-		{ 
-			returnNewDocument: true 
-		}, 
-
+		{ _id : new ObjectId(id) }, 
+		{ $set: put }, 
+		{ returnNewDocument: true }, 
 		(err, data) => {
 			if(err) throw err
 			res.send({
@@ -195,24 +181,39 @@ router.put('/', (req, res) => {
 })
 
 router.delete('/', (req, res) => {
-	if(req.body.path) {
-		let r = req.body.path
-		let p = pt.join(filesDir, r)
-		if(fs.existsSync(p)) {
-			fs.unlink(p, (err) => {
+
+	db = () => {
+		mongo((err, client) => {
+			let db = client.db().collection('files');
+			db.deleteOne({ _id : new ObjectId(req.body.id) }, (err, data) => {
 				if(err) throw err
-				res.send(r + ' deleted')
 			})
-			return
-		}
-		res.send({ err : r + ' not found' })
-		return
+			client.close();
+		})
 	}
-	res.send({ err : req.body.path + ' is not defined'})
+
+	files = () => {
+		let name = req.body.path;
+		let path = pt.join(filesDir, name);
+		if(fs.existsSync(path)) {
+			fs.unlink(path, (err) => {
+				if(err) throw err
+			})
+		}	
+	}
+
+	if(req.body.id) {
+		db()
+	} else if(req.body.path) {
+		files()
+	} else if(!req.body.id && !req.body.path) {
+		res.send({ err : 'req.body.path or req.body.id is not specified' })
+	}	
+	res.status(500).send({})
 })
 
 router.use(function(req, res, next) {
-  res.redirect('/')
+  res.redirect('/');
 });
 
 module.exports = router

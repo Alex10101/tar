@@ -1,4 +1,4 @@
-readline = (path, count) => {
+readline = (path, arg_from, arg_to) => {
 
 	const stream = require('fs').createReadStream(path)
 	const rl = require('readline').createInterface({
@@ -14,8 +14,8 @@ readline = (path, count) => {
 		})
 	})
 
-	let from = 10
-	let to = count || 100
+	let from = Number(arg_from) || 0
+	let to = Number(arg_to) || 100
 	let arr = []
 
 	rl.on('line', function (line) {

@@ -15,8 +15,30 @@ const { mongo, ObjectId } = require('../fs/mongo-fs-del.js');
 
 const home  = pt.join(__dirname, '..', '..');
 const public = pt.join(home, 'public');
-const files = pt.join(public, 'files');
+const filesDir = pt.join(public, 'files');
 const temp = pt.join(public, 'tmp');
+
+multipartParse = (req, res, next) => {
+	// if statement dosen't work here
+	// because typeof req.body[key]
+	// always returns 'string'.
+	// Already learning Typescript to forget this.
+
+	let arr = []
+	for(let key in req.body) {
+		arr.push(key)
+	}
+
+	for(let i = 0; i < arr.length; i++) {
+		try {
+		
+		} catch(err) {
+			
+		}
+	}
+
+	next()
+}
 
 router.get('/', (req, res) => {
 	let b = req.body
@@ -75,41 +97,45 @@ router.get('/extract', (req, res) => {
 	)
 })
 
-router.post('/', (req, res) => {
+router.post('/', multipartParse, (req, res) => {
 	let file = req.files
 	if(!file) {
 		res.status(405).send({ err : "Can't find pinned file" })
 		return
 	}
-	let filename = req.body.filename || file.file.name;
 
-	if(!fs.existsSync(files + filename)) {
+	let data = req.body.data
+	let filename = data.filename || file.file.name;
+	let path = pt.join(filesDir, filename);
+
+
+	console.log(req.body.data)
+
+	function post() {
 		mongo((err, client) => {
 			let db = client.db().collection('files');
 
 			function insert() {
-				let b = req.body
-				let exp = b.expire
 				let item = {
-					title: b.title || undefined,
+					title: data.title || undefined,
 					filename : filename,
-					description: b.description || undefined,
-					expire : exp || undefined,
-					timestamp : new Date(exp).getTime() || undefined
+					description: data.description || undefined,
+					expire : data.expired || undefined,
+					timestamp : new Date(data.expired).getTime() || undefined
 				}
+
 				db.insertOne(item)
-				req.files.file.mv(files + '/' + filename)
+				req.files.file.mv(path)
 				res.send({ 
 					msg : { 
 						uploaded : filename,
-						inserted : JSON.stringify(item)
+						inserted : item
 					}
 				})
-
 				client.close()
 			}
 
-		 	db.find({title: req.body.title}).toArray((err, data) => {
+		 	db.find({title: data.title}).toArray((err, data) => {
 			    if(data.length > 0) {
 			    	res.send({
 			    		err : 'title exist',
@@ -118,30 +144,31 @@ router.post('/', (req, res) => {
 			    	return
 			    }
 			    insert()
+			    client.close()
 			    return 			    
 			});
 		})
-		return		
- 	}
-
- 	res.send({
- 		err : `Name ${filename} exist`,
- 		stats : JSON.stringify(fs.statSync(files + filename))
- 	}) 
-});
-
-router.put('/', (req, res) => {
-	let id = req.body.id
-	let put = req.body.put
-	try {
-		JSON.parse(put)
-	} catch(err) {
-		res.send({
-			err : err,
-			item : req.body
-		})
 		return
 	}
+	fs.exists(path, (err) => {
+		if(err) {
+ 			res.send({
+		 		err : `File ${filename} exist`,
+		 		stats : fs.statSync(path)
+		 	})
+		} else {
+			post()
+		}
+	})
+});
+
+router.put('/', multipartParse, (req, res) => {
+	let id = req.body.id
+	let put = req.body.put
+	console.log(req.body.put)
+	console.log(id)
+	return
+
 	if(!id && !put) {
 		res.send({
 			err: 'Wrong data',
@@ -149,6 +176,7 @@ router.put('/', (req, res) => {
 		})
 		return
 	}
+
 
 	mongo((err, client) => {
 		let db = client.db().collection('files');
@@ -161,7 +189,7 @@ router.put('/', (req, res) => {
 			// $set: put & $set : { put }
 			// inserts { put: { title: '123' } }
 			//     instead of { title: '123' }
-			$set: JSON.parse(req.body.put) 
+			$set: req.body.put 
 		}, 
 
 		{ 

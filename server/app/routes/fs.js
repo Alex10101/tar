@@ -2,6 +2,7 @@ const app = require('express');
 const router = app.Router();
 const fs = require('fs');
 const pt  = require('path');
+const formidable = require('formidable');
 
 // Executes tar -xzvf  ${path} -C ../tmp --keep-old-files
 const extract = require('../fs/extract.js');
@@ -17,28 +18,6 @@ const home  = pt.join(__dirname, '..', '..');
 const public = pt.join(home, 'public');
 const filesDir = pt.join(public, 'files');
 const temp = pt.join(public, 'tmp');
-
-multipartParse = (req, res, next) => {
-	// if statement dosen't work here
-	// because typeof req.body[key]
-	// always returns 'string'.
-	// Already learning Typescript to forget this.
-
-	let arr = []
-	for(let key in req.body) {
-		arr.push(key)
-	}
-
-	for(let i = 0; i < arr.length; i++) {
-		try {
-		
-		} catch(err) {
-			
-		}
-	}
-
-	next()
-}
 
 router.get('/', (req, res) => {
 	let b = req.body
@@ -58,31 +37,36 @@ router.get('/', (req, res) => {
 	})
 });
 
-
 router.get('/tmp', (req, res) => {
-	let p = req.body.path || req.query.path || null
-	if(p) {		
-		if(p.indexOf('.') > 1) {
-			readline(temp + p).then((data, err) => {
+	let path = req.body.path || req.query.path || null
+	if(path) {		
+		if(path.indexOf('.') > 1) {
+			readline(temp + path).then((data, err) => {
 				if(err) throw err
 				if(data.errno) {
 					res.send(data)
 					return
 				}
-				res.send(data)
+				res.send({
+					lines : data
+				})
 			})
 			return
 		} 
 
-		fs.readdir(temp + p, (err, data) => {
-			res.send(data)
+		fs.readdir(temp + path, (err, data) => {
+			res.send({
+				dir: data
+			})
 		})
 		return
 	}
 
 	fs.readdir(temp, (err, data) => {
 		if(err) console.log(err)
-		res.send(data)
+		res.send({
+			tmp_folder : data
+		})
 	})
 })
 
@@ -97,19 +81,16 @@ router.get('/extract', (req, res) => {
 	)
 })
 
-router.post('/', multipartParse, (req, res) => {
+router.post('/', (req, res) => {
 	let file = req.files
 	if(!file) {
 		res.status(405).send({ err : "Can't find pinned file" })
 		return
 	}
 
-	let data = req.body.data
+	let data = JSON.parse(req.body.data)
 	let filename = data.filename || file.file.name;
 	let path = pt.join(filesDir, filename);
-
-
-	console.log(req.body.data)
 
 	function post() {
 		mongo((err, client) => {
@@ -125,14 +106,16 @@ router.post('/', multipartParse, (req, res) => {
 				}
 
 				db.insertOne(item)
-				req.files.file.mv(path)
-				res.send({ 
-					msg : { 
-						uploaded : filename,
-						inserted : item
-					}
+				req.files.file.mv(path, (err) => {
+					if(err) throw err
+					res.send({ 
+						msg : { 
+							uploaded : filename,
+							inserted : item
+							}
+					})
+					client.close()
 				})
-				client.close()
 			}
 
 		 	db.find({title: data.title}).toArray((err, data) => {
@@ -162,12 +145,9 @@ router.post('/', multipartParse, (req, res) => {
 	})
 });
 
-router.put('/', multipartParse, (req, res) => {
+router.put('/', (req, res) => {
 	let id = req.body.id
-	let put = req.body.put
-	console.log(req.body.put)
-	console.log(id)
-	return
+	let put = JSON.parse(req.body.put)
 
 	if(!id && !put) {
 		res.send({
@@ -177,7 +157,6 @@ router.put('/', multipartParse, (req, res) => {
 		return
 	}
 
-
 	mongo((err, client) => {
 		let db = client.db().collection('files');
 		db.findOneAndUpdate(
@@ -186,10 +165,7 @@ router.put('/', multipartParse, (req, res) => {
 		}, 
 
 		{
-			// $set: put & $set : { put }
-			// inserts { put: { title: '123' } }
-			//     instead of { title: '123' }
-			$set: req.body.put 
+			$set: put
 		}, 
 
 		{ 
@@ -200,7 +176,7 @@ router.put('/', multipartParse, (req, res) => {
 			if(err) throw err
 			res.send({
 				msg : 'updated',
-				data : data.value
+				data : data
 			})	
 		})	
 	})
@@ -210,7 +186,7 @@ router.put('/', multipartParse, (req, res) => {
 router.delete('/', (req, res) => {
 	if(req.body.path) {
 		let r = req.body.path
-		let p = files + req.body.path
+		let p = pt.join(filesDir, r)
 		if(fs.existsSync(p)) {
 			fs.unlink(p, (err) => {
 				if(err) throw err

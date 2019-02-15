@@ -1,8 +1,8 @@
 const { exec } = require('child_process');
 const fs = require('fs');
 
-const dir = './files';
-const tmp = './tmp'
+const dir = './public/files';
+const tmp = './public/tmp'
 const cd = `cd ${dir} && exec`
 
 extract = (path, cb) => {

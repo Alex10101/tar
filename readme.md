@@ -29,11 +29,11 @@ __Performance :__
     The memory increasing from 1.7GB(min) to 2.3GB(max). 
     After downloading it decreases on 150 mb.
 
->  Response time of uploading single 4GB file :
->>    First :  37.017 ms  
->>            15.522 ms 
->>            14.714 ms  
->>            15.391 ms 
+    Response time of uploading single 4GB file :
+     First :  37.017 ms  
+              15.522 ms 
+              14.714 ms  
+              15.391 ms 
 
 
   __Completely fail here__ : 

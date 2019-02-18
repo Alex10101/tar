@@ -58,5 +58,6 @@ __Etc :__
     app/fs/mongo-fs-del.js : The file for cron.
     Removes expired files and exports database.
 
-    Link to 4GB file on [this](https://itnext.io/using-node-js-to-read-really-really-large-files-pt-1-d2057fe76b33) article
+    Link to 4GB file on this article :
+    https://itnext.io/using-node-js-to-read-really-really-large-files-pt-1-d2057fe76b33
 

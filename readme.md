@@ -23,17 +23,17 @@ __Usage :__
 
 __Performance :__
 
-    Rises from 10% to 50%(On 4 cores, too large i think). 
-    The memory increasing from 1.9GB(min) to 3.1GB(max). 
-    After downloading it decreases on 100 mb.
+    Rises from 10% to 50%(On 4 cores, too much i think). 
+    The memory increasing from 1.7GB(min) to 2.3GB(max). 
+    After downloading it decreases on 150 mb.
 
   Response time of uploading single 4GB file :
-    First : 40.085 ms
-            18.126 ms
-            17.557 ms
-            18.197 ms 
+    First : 37.017 ms
+            15.522 ms
+            14.714 ms
+            15.391 ms 
 
-  Completely fail here : 
+  __Completely fail here__ : 
     When single 4GB file uploads but the specified title exists
     response time is 14.918 ms.
     It seems that request body reads only after handling all 
@@ -59,5 +59,6 @@ __Etc :__
     Removes expired files and exports database.
 
     Link to 4GB file on this article :
-    https://itnext.io/using-node-js-to-read-really-really-large-files-pt-1-d2057fe76b33
+    
+  https://itnext.io/using-node-js-to-read-really-really-large-files-pt-1-d2057fe76b33
 

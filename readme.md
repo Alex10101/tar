@@ -19,16 +19,24 @@ Usage :
   There you can read both files and folders specified in path key and specify pagination in listed files.
 
 
-Performance :
 
-  rises from 10% to 50%(On 4 cores, too large i think). 
-  The memory increaseing from 1.9GB(min) to 3.1GB(max). After downloading it decreases on 100 mb. 
+Performance :
+  Rises from 10% to 50%(On 4 cores, too large i think). 
+  The memory increasing from 1.9GB(min) to 3.1GB(max). 
+  After downloading it decreases on 100 mb.
+
+  Response time of uploading single 4GB file :
+    First : 40.085 ms
+            18.126 ms
+            17.557 ms
+            18.197 ms 
 
   Completely fail here : 
     When single 4GB file uploads but the specified title exists
     response time is 14.918 ms.
     It seems that request body reads only after handling all 
     parts of the request. This is express-fileupload and multer problem.
+
 
 
 Etc : 
@@ -48,5 +56,6 @@ Etc :
   app/fs/mongo-fs-del.js : The file for cron.
   Removes expired files and exports database.
 
-  Link to 4GB file on this article : 
-  https://itnext.io/using-node-js-to-read-really-really-large-files-pt-1-d2057fe76b33
+  Link to 4GB file on [this](https://itnext.io/using-node-js-to-read-really-really-large-files-pt-1-d2057fe76b33) article
+  
+

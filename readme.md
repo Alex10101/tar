@@ -25,7 +25,7 @@ __Usage :__
 
 __Performance :__
 
-    Rises from 10% to 50%(On 4 cores, too much i think). 
+    Rises from 10% to 50%(On 4 cores that too much i think). 
     The memory increasing from 1.7GB(min) to 2.3GB(max). 
     After downloading it decreases on 150 mb.
 

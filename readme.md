@@ -34,6 +34,13 @@ __Performance :__
               15.522 ms 
               14.714 ms  
               15.391 ms 
+              
+    Data from 1000 get requests of postman runner :
+             Average response time : 5.418
+             
+    This is not clean data because i runned both postman and server
+    on single machine. No one in my office knows how
+    to make http requests on local network so for now i'm done.
 
 
   __Completely fail here__ : 

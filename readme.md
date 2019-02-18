@@ -4,7 +4,7 @@ __Usage :__
     or use my Mlab account specified in './server/.env'.
           After npm i run "node ." at ./server
 
-    Then upload your file by POST request specified in postman file.
+    Then upload your file by POST request specified in postman file(exec_crud.postman_collection.json).
     This will add uploaded file in database with time "2019-02-15T12:31:36.846Z"
     You can change original filename by adding "specify" : ${new_name} in body.data
     By default this is '42'.

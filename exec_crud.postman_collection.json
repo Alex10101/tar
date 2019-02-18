@@ -214,6 +214,55 @@
 			"response": []
 		},
 		{
+			"name": "Read Tar Line by line",
+			"protocolProfileBehavior": {
+				"disableBodyPruning": true
+			},
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Content-Type",
+						"name": "Content-Type",
+						"value": "application/x-www-form-urlencoded",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "urlencoded",
+					"urlencoded": [
+						{
+							"key": "path",
+							"value": "file.tar.gz",
+							"type": "text"
+						},
+						{
+							"key": "skip",
+							"value": "5",
+							"type": "text"
+						},
+						{
+							"key": "to",
+							"value": "15",
+							"type": "text"
+						}
+					]
+				},
+				"url": {
+					"raw": "http://localhost:3000/tar",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "3000",
+					"path": [
+						"tar"
+					]
+				}
+			},
+			"response": []
+		},
+		{
 			"name": "Reading extracted files(& folders)",
 			"protocolProfileBehavior": {
 				"disableBodyPruning": true

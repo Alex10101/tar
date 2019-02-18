@@ -5,6 +5,7 @@ const pt  = require('path');
 
 const extract = require('../fs/extract.js');
 const readline = require('../fs/readline.js');
+const readtar = require('../fs/readtar.js');
 const { mongo, ObjectId } = require('../fs/mongo-fs-del.js');
 
 const home  = pt.join(__dirname, '..', '..');
@@ -28,6 +29,26 @@ router.get('/', (req, res) => {
 	  });
 	})
 });
+
+router.get('/tar', (req, res) => {
+	let get = (name) => req.body[name] || req.query[name] || null;
+	let path = get('path');
+	let skip = Number(get('skip'));
+	let to   = Number(get('to'));
+	if(path) {		
+		readtar(pt.join(filesDir, path), skip, to).then((data, err) => {
+			if(err) throw err;
+			if(data.errno) {
+				res.send(data);
+				return
+			}
+
+			res.send({
+				lines : data
+			})
+		})
+	}
+})
 
 router.get('/tmp', (req, res) => {
 	let get = (name) => req.body[name] || req.query[name] || null;

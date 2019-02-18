@@ -32,8 +32,8 @@ __Performance :__
 >  Response time of uploading single 4GB file :
 >>    First :  37.017 ms  
 >>            15.522 ms 
->>             14.714 ms  
->>             15.391 ms 
+>>            14.714 ms  
+>>            15.391 ms 
 
   __Completely fail here__ : 
     When single 4GB file uploads but the specified title exists

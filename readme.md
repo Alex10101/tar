@@ -1,6 +1,7 @@
 __Usage :__
 
-    Add database called "Tar" and collection called "files" in your MongoDB or use my Mlab account specified in './server/.env'.
+    Add database called "Tar" and collection called "files" in your MongoDB 
+    or use my Mlab account specified in './server/.env'.
           After npm i run "node ." at ./server
 
     Then upload your file by POST request specified in postman file.

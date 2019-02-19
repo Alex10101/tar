@@ -6,18 +6,9 @@ __Usage :__
     Then upload your file by POST request specified in postman file.
     This will add uploaded file in database with time "2019-02-15T12:31:36.846Z"
     You can change original filename by adding "specify" : ${new_name} in body.data
-    By default this is '42'.
 
-    Then you can restart the server or download new file and deleted files will be displayed in terminal.
-    (I think this is the cron job. If you have argued different opinion please tell me about it)
-
-    To extract .tar file specify their name by PUT query at /extract with path ${name} keys in body.
-    After extracting sever redirect you into the temp folder (/tmp) with an extracted archive.
-    Temp folder clears before every extracting process.
-
-    In /tmp query you can see the temp folder and specify the pagination.
-    There you can read both files and folders specified in path key and specify pagination in listed files.
-
+    Then specify your filename in body.path of GET /tar request.
+    This create the readline interface with read stream of your file piped by zlib.createGunzip command.    
 
 
 __Performance :__
@@ -44,18 +35,6 @@ __Etc :__
 
     Postman test queries pinned in file exec_crud.postman_collection.json
     Import them into your app via 'File -> import'
-
-    get('/') & get('/tmp') queries supports both req.body & req.query
-
-    /extract query support only filename; 
-    extracts .tar/.tar.gz files into /tmp directory
-
-    /tmp query support both /foldername & /folder/filename.asm
-
-    app/fs/extract.js : Executes tar -xzvf  ${path} -C ../tmp --keep-old-files
-    app/fs/readline.js : Just readline.createInterface.
-    app/fs/mongo-fs-del.js : The file for cron.
-    Removes expired files and exports database.
 
     Link to 4GB file on [this](https://itnext.io/using-node-js-to-read-really-really-large-files-pt-1-d2057fe76b33) article
 

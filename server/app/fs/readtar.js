@@ -24,6 +24,9 @@ readtar = (path, arg_skip, arg_to) => {
 		})
 		lineReader.on('close', () => {
 			for(i = 0; i < arr.length; i++) {
+				arr[0] = arr[0]
+				   .substr(arr[0].lastIndexOf('\u0000') + 1);
+				
 				if(arr[i].indexOf('\u0000') > -1) {
 					let pattern = /\u0000/gi;
 					arr[i] = arr[i].replace(pattern, ' ');
@@ -52,10 +55,5 @@ readtar = (path, arg_skip, arg_to) => {
 
 	return promise
 }
-
-// let pt = '../../public/files/file.tar.gz'
-// readtar(pt).then((err, er) => {
-// 	console.log(err)
-// })
 
 module.exports = readtar

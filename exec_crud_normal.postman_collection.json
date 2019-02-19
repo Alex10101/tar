@@ -1,0 +1,148 @@
+{
+	"info": {
+		"_postman_id": "4e9d1bb4-f503-4110-8865-632d4715ea30",
+		"name": "exec_crud_normal",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Get_main",
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Content-Type",
+						"name": "Content-Type",
+						"value": "application/x-www-form-urlencoded",
+						"type": "text",
+						"disabled": true
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": ""
+				},
+				"url": {
+					"raw": "http://localhost:3000/?skip=0&limit=100&search_by={ \"title\" : \"Sample title\" }",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "3000",
+					"path": [
+						""
+					],
+					"query": [
+						{
+							"key": "skip",
+							"value": "0",
+							"description": "optional"
+						},
+						{
+							"key": "limit",
+							"value": "100",
+							"description": "optional"
+						},
+						{
+							"key": "search_by",
+							"value": "{ \"title\" : \"Sample title\" }",
+							"description": "optional"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Read Tar Line by line",
+			"protocolProfileBehavior": {
+				"disableBodyPruning": true
+			},
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Content-Type",
+						"name": "Content-Type",
+						"value": "application/x-www-form-urlencoded",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "urlencoded",
+					"urlencoded": [
+						{
+							"key": "path",
+							"value": "file.tar.gz",
+							"type": "text"
+						},
+						{
+							"key": "skip",
+							"value": "5",
+							"type": "text"
+						},
+						{
+							"key": "to",
+							"value": "15",
+							"type": "text"
+						}
+					]
+				},
+				"url": {
+					"raw": "http://localhost:3000/tar",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "3000",
+					"path": [
+						"tar"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "File + Data",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"name": "Content-Type",
+						"value": "application/x-www-form-urlencoded",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "formdata",
+					"formdata": [
+						{
+							"key": "data",
+							"value": "{\"specify\" : \"42.txt\", \"name\":\"1.tar.gz\",\"title\":\"Sample title\",\"description\":\"Sample Description\",\"expired\":\"2019-02-15T12:31:36.846Z\"}\n",
+							"description": "if (data.specify) - changes filename",
+							"type": "text"
+						},
+						{
+							"key": "file",
+							"type": "file",
+							"src": ""
+						}
+					]
+				},
+				"url": {
+					"raw": "http://localhost:3000/",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "3000",
+					"path": [
+						""
+					]
+				}
+			},
+			"response": []
+		}
+	]
+}

@@ -4,10 +4,9 @@ require('dotenv').config();
 const MongoClient = require('mongodb').MongoClient;
 const ObjectId = require('mongodb').ObjectID;
 const url = process.env.DB_URI
-const connection = MongoClient.connect
 
 const pt  = require('path');
-const home  = pt.join(__dirname, '..', '..');
+const home  = pt.join(__dirname);
 const public = pt.join(home, 'public');
 const filesDir = pt.join(public, 'files');
 
@@ -49,8 +48,3 @@ connect = (callback) => {
 }
 
 connect(cb)
-
-module.exports = {
-	mongo: connect,
-	ObjectId : ObjectId
-}

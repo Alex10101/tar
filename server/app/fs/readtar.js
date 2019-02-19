@@ -13,7 +13,7 @@ readtar = (path, arg_skip, arg_to) => {
 		}
 	}
 
-	const stream = require('fs').createReadStream(path)
+	const stream = fs.createReadStream(path)
 	let lineReader = readline.createInterface({
 	  input: stream.pipe(zlib.createGunzip())
 	});
@@ -23,6 +23,13 @@ readtar = (path, arg_skip, arg_to) => {
 			res(err)
 		})
 		lineReader.on('close', () => {
+			for(i = 0; i < arr.length; i++) {
+				if(arr[i].indexOf('\u0000') > -1) {
+					let pattern = /\u0000/gi;
+					arr[i] = arr[i].replace(pattern, ' ');
+				}
+			}
+
 			res(arr)
 		})
 	})
@@ -39,9 +46,6 @@ readtar = (path, arg_skip, arg_to) => {
 		}
 	  	from++
 	  	if(from > pass) {
-		  	if(from === 1) {
-		  		line = line.substr(line.lastIndexOf('\u0000') + 1)
-		  	}
 		  	arr.push(line)
 	  	}
 	});

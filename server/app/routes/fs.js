@@ -3,21 +3,26 @@ const router = app.Router();
 const fs = require('fs');
 const pt  = require('path');
 
-const extract = require('../fs/extract.js');
-const readline = require('../fs/readline.js');
 const readtar = require('../fs/readtar.js');
-const { mongo, ObjectId } = require('../fs/mongo-fs-del.js');
+
+require('dotenv').config();
+const MongoClient = require('mongodb').MongoClient;
+const url = process.env.DB_URI
+const mongo = (cb) => MongoClient.connect(url, { useNewUrlParser: true }, cb)
 
 const home  = pt.join(__dirname, '..', '..');
 const public = pt.join(home, 'public');
 const filesDir = pt.join(public, 'files');
-const temp = pt.join(public, 'tmp');
+
+get = (req, name, Null) => {
+	return req.body[name] || req.query[name] || Null;
+}
 
 router.get('/', (req, res) => {
-	let get = (name, Null) => req.body[name] || req.query[name] || Null;
-	let skip = Number(get('skip', 0));
-	let limit = Number(get('limit', 10));
-	let search_by = get('search_by', {});
+	let skip = Number(get(req, 'skip', 0));
+	let limit = Number(get(req, 'limit', 10));
+	let search_by = get(req, 'search_by', {});
+
 	mongo((err, client) => {
 	  if (err) throw err;
 	  let db = client.db();
@@ -31,10 +36,10 @@ router.get('/', (req, res) => {
 });
 
 router.get('/tar', (req, res) => {
-	let get = (name) => req.body[name] || req.query[name] || null;
-	let path = get('path');
-	let skip = Number(get('skip'));
-	let to   = Number(get('to'));
+	let path = get(req, 'path');
+	let skip = Number(get(req, 'skip'));
+	let to   = Number(get(req, 'to'));
+
 	if(path) {		
 		readtar(pt.join(filesDir, path), skip, to).then((data, err) => {
 			if(err) throw err;
@@ -50,53 +55,6 @@ router.get('/tar', (req, res) => {
 	}
 })
 
-router.get('/tmp', (req, res) => {
-	let get = (name) => req.body[name] || req.query[name] || null;
-	let path = get('path');
-	let from = get('from');
-	let to   = get('to');
-	if(path) {		
-		if(path.indexOf('.') > 1) {
-			readline(temp + path, from, to).then((data, err) => {
-				if(err) throw err;
-				if(data.errno) {
-					res.send(data);
-					return
-				}
-				res.send({
-					lines : data
-				})
-			})
-			return
-		} 
-
-		fs.readdir(temp + path, (err, data) => {
-			res.send({
-				dir: data
-			})
-		})
-		return
-	}
-
-	fs.readdir(temp, (err, data) => {
-		if(err) console.log(err);
-		res.send({
-			tmp_folder : data
-		})
-	})
-})
-
-router.put('/extract', (req, res) => {
-	extract(req.body.path, (error, stdout, stderr) => {
-		  if (error) {
-		    res.send({ err : error })
-		    return
-		  }
-		  res.redirect('/tmp');
-		}
-	)
-})
-
 router.post('/', (req, res) => {
 	let file = req.files;
 	if(!file) {
@@ -106,9 +64,8 @@ router.post('/', (req, res) => {
 
 	let data = JSON.parse(req.body.data);
 	let filename = data.specify || file.file.name;
-
 	let spec = data.specify;
-	if(spec) {
+	if(spec) { // to save extension
 		let i = spec.indexOf('.');
 		if(i > -1) {
 			let head = spec.substr(0, i);
@@ -121,6 +78,7 @@ router.post('/', (req, res) => {
 
 	function post() {
 		mongo((err, client) => {
+			if(err) throw err;
 			let db = client.db().collection('files');
 
 			function insert() {
@@ -171,67 +129,6 @@ router.post('/', (req, res) => {
 		}
 	})
 });
-
-router.put('/', (req, res) => {
-	let id = req.body.id;
-	let put = JSON.parse(req.body.put);
-
-	if(!id && !put) {
-		res.send({
-			err: 'Wrong data',
-			msg : req.body
-		})
-		return
-	}
-
-	mongo((err, client) => {
-		let db = client.db().collection('files');
-		db.findOneAndUpdate(
-		{ _id : new ObjectId(id) }, 
-		{ $set: put }, 
-		{ returnNewDocument: true }, 
-		(err, data) => {
-			if(err) throw err
-			res.send({
-				msg : 'updated',
-				data : data
-			})	
-		})	
-	})
-
-})
-
-router.delete('/', (req, res) => {
-
-	db = () => {
-		mongo((err, client) => {
-			let db = client.db().collection('files');
-			db.deleteOne({ _id : new ObjectId(req.body.id) }, (err, data) => {
-				if(err) throw err
-			})
-			client.close();
-		})
-	}
-
-	files = () => {
-		let name = req.body.path;
-		let path = pt.join(filesDir, name);
-		if(fs.existsSync(path)) {
-			fs.unlink(path, (err) => {
-				if(err) throw err
-			})
-		}	
-	}
-
-	if(req.body.id) {
-		db()
-	} else if(req.body.path) {
-		files()
-	} else if(!req.body.id && !req.body.path) {
-		res.send({ err : 'req.body.path or req.body.id is not specified' })
-	}	
-	res.status(500).send({})
-})
 
 router.use(function(req, res, next) {
   res.redirect('/');

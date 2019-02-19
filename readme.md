@@ -11,6 +11,9 @@ __Usage :__
     Then specify your filename in body.path of GET /tar request.
     This create the readline interface with read stream of your file 
         .piped by zlib.createGunzip command.    
+        
+    cron.js removes expired files. 
+    As it goes from filename i think this is the cron job.
 
 
 __Performance :__

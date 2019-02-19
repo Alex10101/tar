@@ -1,6 +1,7 @@
 __Usage :__
 
-    Add database called "Tar" and collection called "files" in your MongoDB or use my Mlab account specified in './server/.env'.
+    Add database called "Tar" and collection called "files" in your MongoDB 
+    or use my Mlab account specified in './server/.env'.
           After npm i run "node ." at ./server
 
     Then upload your file by POST request specified in postman file.
@@ -8,7 +9,8 @@ __Usage :__
     You can change original filename by adding "specify" : ${new_name} in body.data
 
     Then specify your filename in body.path of GET /tar request.
-    This create the readline interface with read stream of your file piped by zlib.createGunzip command.    
+    This create the readline interface with read stream of your file 
+        .piped by zlib.createGunzip command.    
 
 
 __Performance :__

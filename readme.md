@@ -38,6 +38,6 @@ __Etc :__
     Postman test queries pinned in file exec_crud.postman_collection.json
     Import them into your app via 'File -> import'
 
-    Link to 4GB file on [this](https://itnext.io/using-node-js-to-read-really-really-large-files-pt-1-d2057fe76b33) article
+Link to 4GB file on [this](https://itnext.io/using-node-js-to-read-really-really-large-files-pt-1-d2057fe76b33) article
 
 

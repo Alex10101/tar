@@ -1,3 +1,7 @@
+Next targets : apply asserts, 
+resolve Path traversal and other 
+security vulnerabilities
+
 __Usage :__
 
     Add database called "Tar" and collection called "files" in your MongoDB 

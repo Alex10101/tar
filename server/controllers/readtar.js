@@ -26,7 +26,7 @@ readtar = (path, argSkip, argTo) => {
       for (i = 0; i < arr.length; i++) {
         if (arr[i].indexOf('\u0000') > -1) {
           const pattern = /\u0000/gi;
-          arr[i] = arr[i].replace(pattern, ' ');
+          arr[i] = arr[i].replace(pattern, '');
         }
       }
 
@@ -52,10 +52,5 @@ readtar = (path, argSkip, argTo) => {
 
   return promise;
 };
-
-// let pt = '../../public/files/file.tar.gz'
-// readtar(pt).then((err, er) => {
-// console.log(err)
-// })
 
 module.exports = readtar;

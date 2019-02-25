@@ -1,16 +1,16 @@
 const app = require('express');
 const router = app.Router();
-const fs = require('fs');
+const fs = require('./fs');
 const pt = require('path');
 
-const readtar = require('../fs/readtar.js');
+const readtar = require('./readtar.js');
 
 require('dotenv').config();
 const MongoClient = require('mongodb').MongoClient;
 const url = process.env.DB_URI;
 const mongo = (cb) => MongoClient.connect(url, {useNewUrlParser: true}, cb);
 
-const home = pt.join(__dirname, '..', '..');
+const home = pt.join(__dirname, '..');
 const public = pt.join(home, 'public');
 const filesDir = pt.join(public, 'files');
 

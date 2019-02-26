@@ -40,7 +40,7 @@ const find = {
 };
 
 File.find(find).exec(function(err, items) {
-  if(err) throw err;
+  if (err) throw err;
   remove(items);
 });
 

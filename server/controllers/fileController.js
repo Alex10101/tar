@@ -1,5 +1,6 @@
 const fs = require('fs');
 const pt = require('path');
+const {body} = require('express-validator/check');
 
 const readtar = require('./readtar.js');
 const File = require('../models/fileSchema');
@@ -32,25 +33,28 @@ exports.read = (req, res) => {
   const to = Number(get(req, 'to'));
 
   if (path) {
-    readtar(pt.join(filesDir, path), skip, to).then((data, err) => {
-      if (err) throw err;
-      if (data.errno) {
-        res.send(data);
-        return;
-      }
+    readtar(pt.join(filesDir, path), skip, to)
+        .then((data, err) => {
+          if (err) throw err;
+          if (data.errno) {
+            res.send(data);
+            return;
+          }
 
-      res.send({
-        lines: data,
-      });
-    });
+          res.send({
+            lines: data,
+          });
+        });
   }
 };
 
 exports.upload = (req, res) => {
-  const file = req.files;
-  if (!file) {
-    res.status(405).send({err: 'Can\'t find pinned file'});
-    return;
+  // aneeds joi or jsonschema
+  req.assert('req.files.file', 'Can\'t find pinned file').notEmpty();
+  const errors = req.validationErrors();
+
+  if (errors) {
+    return res.send({err: errors});
   }
 
   const data = JSON.parse(req.body.data);
@@ -67,9 +71,20 @@ exports.upload = (req, res) => {
 
   const path = pt.join(filesDir, filename);
 
+  fs.exists(path, (err) => {
+    if (err) {
+      res.send({
+        err: `File ${filename} exist`,
+        stats: fs.statSync(path),
+      });
+    } else {
+      post();
+    }
+  });
+
   function post() {
     function insert() {
-      const file = new File ({
+      const file = new File({
         title: data.title || undefined,
         filename: filename,
         description: data.description || undefined,
@@ -98,18 +113,6 @@ exports.upload = (req, res) => {
         return;
       }
       insert();
-      return;
     });
-    return;
   }
-  fs.exists(path, (err) => {
-    if (err) {
-      res.send({
-        err: `File ${filename} exist`,
-        stats: fs.statSync(path),
-      });
-    } else {
-      post();
-    }
-  });
 };

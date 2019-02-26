@@ -1,8 +1,10 @@
 const express = require('express');
 const app = express();
 const fileUpload = require('express-fileupload');
+const expressValidator = require('express-validator');
 const helmet = require('helmet');
 const mongoose = require('mongoose');
+const path = require('path');
 
 const fileController = require('./controllers/fileController');
 
@@ -20,13 +22,18 @@ mongoose.connection.on('error', (err) => {
 });
 
 app.use(helmet());
-app.use(express.json());
+app.use(express.json({limit: '1kb'}));
 app.use(express.urlencoded({extended: true}));
+app.use(expressValidator());
 app.use(fileUpload({
   limits: {fileSize: 5000 * 1024 * 1024},
   useTempFiles: true,
   tempFileDir: '/tmp',
+  parseNested: true,
+  abortOnLimit: true,
 }));
+
+app.use(['/', '/tar'], express.static(path.join(__dirname, 'public'), { maxAge: 31557600000 }));
 
 app.get('/', fileController.index);
 app.post('/', fileController.upload);

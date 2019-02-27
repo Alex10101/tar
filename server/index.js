@@ -5,8 +5,10 @@ const expressValidator = require('express-validator');
 const helmet = require('helmet');
 const mongoose = require('mongoose');
 const path = require('path');
+const bodyParser = require('body-parser');
 
 const fileController = require('./controllers/fileController');
+const validate = require('./services/methods');
 
 mongoose.set('useFindAndModify', false);
 mongoose.set('useCreateIndex', true);
@@ -22,8 +24,9 @@ mongoose.connection.on('error', (err) => {
 });
 
 app.use(helmet());
+app.use(express.urlencoded({limit: '1kb', extended: true}));
 app.use(express.json({limit: '1kb'}));
-app.use(express.urlencoded({extended: true}));
+
 app.use(expressValidator());
 app.use(fileUpload({
   limits: {fileSize: 5000 * 1024 * 1024},
@@ -33,14 +36,22 @@ app.use(fileUpload({
   abortOnLimit: true,
 }));
 
-app.use(['/', '/tar'], express.static(path.join(__dirname, 'public'), { maxAge: 31557600000 }));
-
-app.get('/', fileController.index);
-app.post('/', fileController.upload);
-app.get('/tar', fileController.read);
+app.get('/', validate.index, fileController.index);
+app.post('/', validate.upload, fileController.upload);
+app.get('/tar/', validate.read, fileController.read);
 
 app.use(function(req, res, next) {
   res.redirect('/');
+});
+
+app.use(function mainErrorHandler(err, req, res, next) {
+  // if(err.type === 'entity.too.large') {
+  //   res.status(500).send(err);
+  //   return;
+  // }
+  res.status(500).send(err);
+  console.log(err)
+  return;
 });
 
 app.listen(3000);

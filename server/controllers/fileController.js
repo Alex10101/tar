@@ -1,7 +1,5 @@
 const fs = require('fs');
 const pt = require('path');
-const {body} = require('express-validator/check');
-
 const readtar = require('./readtar.js');
 const File = require('../models/fileSchema');
 
@@ -9,72 +7,27 @@ const home = pt.join(__dirname, '..');
 const public = pt.join(home, 'public');
 const filesDir = pt.join(public, 'files');
 
-get = (req, name, Null) => {
-  return req.body[name] || req.query[name] || Null;
-};
-
 exports.index = (req, res) => {
-  const skip = Number(get(req, 'skip', 0));
-  const limit = Number(get(req, 'limit', 10));
-  const searchBy = get(req, 'search_by', {});
+  const data = res.locals.data;
 
-  File.find(searchBy)
-      .skip(skip)
-      .limit(limit)
+  File.find(data.searchBy)
+      .skip(data.skip)
+      .limit(data.limit)
       .exec((err, data) => {
         if (err) throw err;
         res.send(data);
       });
 };
 
-exports.read = (req, res) => {
-  const path = get(req, 'path');
-  const skip = Number(get(req, 'skip'));
-  const to = Number(get(req, 'to'));
-
-  if (path) {
-    readtar(pt.join(filesDir, path), skip, to)
-        .then((data, err) => {
-          if (err) throw err;
-          if (data.errno) {
-            res.send(data);
-            return;
-          }
-
-          res.send({
-            lines: data,
-          });
-        });
-  }
-};
 
 exports.upload = (req, res) => {
-  // aneeds joi or jsonschema
-  req.assert('req.files.file', 'Can\'t find pinned file').notEmpty();
-  const errors = req.validationErrors();
-
-  if (errors) {
-    return res.send({err: errors});
-  }
-
-  const data = JSON.parse(req.body.data);
-  let filename = data.specify || file.file.name;
-  const spec = data.specify;
-  if (spec) { // to save extension
-    const i = spec.indexOf('.');
-    if (i > -1) {
-      const head = spec.substr(0, i);
-      const tail = file.file.name.substr(file.file.name.indexOf('.'));
-      filename = head + tail;
-    }
-  }
-
-  const path = pt.join(filesDir, filename);
+  const data = res.locals.data;
+  const path = pt.join(filesDir, data.filename);
 
   fs.exists(path, (err) => {
     if (err) {
       res.send({
-        err: `File ${filename} exist`,
+        err: `File ${data.filename} exist`,
         stats: fs.statSync(path),
       });
     } else {
@@ -86,7 +39,7 @@ exports.upload = (req, res) => {
     function insert() {
       const file = new File({
         title: data.title || undefined,
-        filename: filename,
+        filename: data.filename,
         description: data.description || undefined,
         expire: data.expired || undefined,
         timestamp: new Date(data.expired).getTime() || undefined,
@@ -97,7 +50,7 @@ exports.upload = (req, res) => {
         if (err) throw err;
         res.send({
           msg: {
-            uploaded: filename,
+            uploaded: data.filename,
             inserted: file,
           },
         });
@@ -115,4 +68,20 @@ exports.upload = (req, res) => {
       insert();
     });
   }
+};
+
+exports.read = (req, res) => {
+  const data = res.locals.data;
+  readtar(pt.join(filesDir, data.path), data.skip, data.limit)
+      .then((data, err) => {
+        if (err) throw err;
+        if (data.errno) {
+          res.send(data);
+          return;
+        }
+
+        res.send({
+          lines: data,
+        });
+      });
 };

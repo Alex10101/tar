@@ -73,15 +73,8 @@ exports.upload = (req, res) => {
 exports.read = (req, res) => {
   const data = res.locals.data;
   readtar(pt.join(filesDir, data.path), data.skip, data.limit)
-      .then((data, err) => {
-        if (err) throw err;
-        if (data.errno) {
-          res.send(data);
-          return;
-        }
-
-        res.send({
-          lines: data,
-        });
-      });
+      .on('error', (err) => {
+        res.send(err);
+      })
+      .pipe(res);
 };

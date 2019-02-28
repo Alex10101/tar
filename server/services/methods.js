@@ -18,8 +18,21 @@ exports.index = (req, res, next) => {
           res.send(err);
           return;
         }
-        data['skip'] = Number(data.skip);
-        data['limit'] = Number(data.limit);
+
+        const skip = data['skip'] = Number(data.skip) || undefined;
+        const limit = data['limit'] = Number(data.limit) || undefined;
+
+        if (skip && limit) {
+          if (skip > limit) {
+            throw new Error('argSkip > argTo');
+          }
+        } else if (skip && !limit) {
+          if (skip > 10) {
+            throw new Error('skip > 10 & !argTo');
+          }
+        }
+
+
         res.locals.data = data;
         next();
       });
@@ -74,8 +87,20 @@ exports.read = (req, res, next) => {
           res.send(err);
           return;
         }
-        data['skip'] = Number(data.skip);
-        data['limit'] = Number(data.limit);
+
+        const skip = data['skip'] = Number(data.skip) || undefined;
+        const limit = data['limit'] = Number(data.limit) || undefined;
+
+        if (skip && limit) {
+          if (skip > limit) {
+            throw new Error('argSkip > argTo');
+          }
+        } else if (skip && !limit) {
+          if (skip > 10) {
+            throw new Error('skip > 10 & !argTo');
+          }
+        }
+
         res.locals.data = data;
         next();
       });

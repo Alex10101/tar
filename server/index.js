@@ -4,8 +4,6 @@ const fileUpload = require('express-fileupload');
 const expressValidator = require('express-validator');
 const helmet = require('helmet');
 const mongoose = require('mongoose');
-const path = require('path');
-const bodyParser = require('body-parser');
 
 const fileController = require('./controllers/fileController');
 const validate = require('./services/methods');
@@ -40,18 +38,12 @@ app.get('/', validate.index, fileController.index);
 app.post('/', validate.upload, fileController.upload);
 app.get('/tar/', validate.read, fileController.read);
 
-app.use(function(req, res, next) {
+app.use(function set404(req, res) {
   res.redirect('/');
 });
 
-app.use(function mainErrorHandler(err, req, res, next) {
-  // if(err.type === 'entity.too.large') {
-  //   res.status(500).send(err);
-  //   return;
-  // }
+app.use(function globErrorHandler(err, req, res) {
   res.status(500).send(err);
-  console.log(err)
-  return;
 });
 
 app.listen(3000);

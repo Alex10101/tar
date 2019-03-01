@@ -40,7 +40,7 @@ localhost:3000
 
     Fail here : 
         When 4GB file uploads but the specified title exists
-        response time is 14.918 ms.
+        response time is 0m6.387s.
         It seems request body reads only after handling all 
         parts of the request. This is express-fileupload and multer problem.
         

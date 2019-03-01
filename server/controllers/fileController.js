@@ -72,9 +72,15 @@ exports.upload = (req, res) => {
 
 exports.read = (req, res) => {
   const data = res.locals.data;
-  readtar(pt.join(filesDir, data.path), data.skip, data.limit)
+  const stream = readtar(pt.join(filesDir, data.path), data.skip, data.limit)
       .on('error', (err) => {
-        res.send(err);
+        console.log(err);
+        res.send('err');
       })
       .pipe(res);
+
+  res.on('close', function() {
+    stream.destroy();
+    console.log('Close received!');
+  });
 };

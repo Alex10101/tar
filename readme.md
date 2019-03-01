@@ -22,22 +22,41 @@ __Usage :__
 
 __Performance :__
 
-    Rises from 10% to 50%(On 4 cores, too large i think). 
-    The memory increasing from 1.9GB(min) to 3.1GB(max). 
-    After downloading it decreases on 100 mb.
+    Upload(single request sending 4GB file):
+    
+~~~~
+$ time curl -H "Content-Type: multipart/form-data"  \
+-F 'data={"specify" : "434.txt", "name":"1.tar.gz","title":"Saple title","description":"Sample Description","expired":"2019-02-15T12:31:36.846Z"}' \
+-F "file=@./itcont.txt" \
+localhost:3000
+~~~~ 
+    Shows :
+        real 0m7.650s
+        user 0m1.106s
+        sys	0m2.684s
+        
+    I can't see performance or memory increasing with htop. 
+    This dosen't grow. 
 
-    Response time of uploading single 4GB file :
-        First : 40.085 ms
-                18.126 ms
-                17.557 ms
-                18.197 ms 
-
-    Completely fail here : 
-        When single 4GB file uploads but the specified title exists
+    Fail here : 
+        When 4GB file uploads but the specified title exists
         response time is 14.918 ms.
-        It seems that request body reads only after handling all 
+        It seems request body reads only after handling all 
         parts of the request. This is express-fileupload and multer problem.
-
+        
+    Read(single request) :
+    
+    $ time curl "http://localhost:3000/read?path=file.tar.gz&limit=300000"
+    
+    shows :
+    
+        real	0m8.238s
+        user	0m0.359s
+        sys	    0m0.819s
+    
+    htop(ctop, top, etc)
+        displays CPU% from 35% to 60%
+                 MEM% 0.5% o_O
 
 
 __Etc :__

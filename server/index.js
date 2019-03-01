@@ -36,7 +36,7 @@ app.use(fileUpload({
 
 app.get('/', validate.index, fileController.index);
 app.post('/', validate.upload, fileController.upload);
-app.get('/tar/', validate.read, fileController.read);
+app.get('/read', validate.read, fileController.read);
 
 app.use(function set404(req, res) {
   res.redirect('/');

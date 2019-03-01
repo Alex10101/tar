@@ -81,27 +81,27 @@ exports.read = (req, res, next) => {
     return;
   }
 
-  Joi.validate(data, schemas.read)
-      .then((data, err) => {
-        if (err) {
-          res.send(err);
-          return;
+  Joi.validate(data, schemas.read, (
+    (err, data) => {
+      if (err) {
+        res.send(err);
+        return;
+      }
+
+      const skip = data['skip'] = Number(data.skip) || undefined;
+      const limit = data['limit'] = Number(data.limit) || undefined;
+
+      if (skip && limit) {
+        if (skip > limit) {
+          throw new Error('argSkip > argTo');
         }
-
-        const skip = data['skip'] = Number(data.skip) || undefined;
-        const limit = data['limit'] = Number(data.limit) || undefined;
-
-        if (skip && limit) {
-          if (skip > limit) {
-            throw new Error('argSkip > argTo');
-          }
-        } else if (skip && !limit) {
-          if (skip > 10) {
-            throw new Error('skip > 10 & !argTo');
-          }
+      } else if (skip && !limit) {
+        if (skip > 10) {
+          throw new Error('skip > 10 & !argTo');
         }
+      }
 
-        res.locals.data = data;
-        next();
-      });
+      res.locals.data = data;
+      next();
+    }));
 };

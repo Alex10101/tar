@@ -5,24 +5,29 @@ const zlib = require('zlib');
 readtar = (path, argSkip, argTo) => {
   let from = 0;
   const pass = argSkip || 0;
-  const to = argTo || 8;
+  const to = (argTo || 50) - 1;
+  let call = 0;
 
-  const stream = fs
-      .createReadStream(path)
+
+  const stream = fs.createReadStream(path, {flags: 'r'})
       .pipe(zlib.createGunzip())
-      .pipe(es.split(/\n/))
-      .pipe(es.map(esmap = (data, cb) => {
-        cb(null, decorate(data));
-      }));
+      .pipe(es.split(/(\r?\n)/))
+      .pipe(es.mapSync( (line) => decorate(line)));
+
 
   function decorate(data) {
+    call++;
+    if(data === '\n') {
+      return data;
+    }
     if (from === to) {
       stream.destroy();
-      return;
+      console.log('destroyed on line', from, ' call:', call);
+      return 0;
     }
     from++;
     if (from > pass) {
-      return data.replace(/\u0000/gi, '');
+      return 'line : ' + from + ' data : ' + data.replace(/\u0000/gi, '');
     }
   }
 

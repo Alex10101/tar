@@ -16,5 +16,7 @@ exports.index = Joi.object().keys({
 exports.read = Joi.object().keys({
   skip: Joi.string().min(1).max(5).regex(/\D/, {invert: true}),
   limit: Joi.string().min(1).max(7).regex(/\D/, {invert: true}),
-  path: Joi.string().max(15).regex(/\.\.\//, {invert: true}).regex(/\.tar/),
+  path: Joi.string().max(150).regex(/\.\.\//, {invert: true})
+    // .regex(/\.tar/)
+  ,
 });

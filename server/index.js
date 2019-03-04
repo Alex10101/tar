@@ -47,3 +47,10 @@ app.use(function globErrorHandler(err, req, res) {
 });
 
 app.listen(3000);
+
+process.on('unhandledRejection', (reason, p) => {
+  throw reason;
+});
+process.on('uncaughtException', (error) => {
+  console.log(error)
+});

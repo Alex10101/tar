@@ -1,7 +1,7 @@
 const fs = require('fs');
 const pt = require('path');
-const readtar = require('./readtar.js');
 const File = require('../models/fileSchema');
+const {fork} = require('child_process');
 
 const home = pt.join(__dirname, '..');
 const public = pt.join(home, 'public');
@@ -71,16 +71,31 @@ exports.upload = (req, res) => {
 };
 
 exports.read = (req, res) => {
+  const forked = fork('./controllers/readtar.js');
   const data = res.locals.data;
-  const stream = readtar(pt.join(filesDir, data.path), data.skip, data.limit)
-      .on('error', (err) => {
-        console.log(err);
-        res.send('err');
-      })
-      .pipe(res);
-
-  res.on('close', function() {
-    stream.destroy();
-    console.log('Close received!');
+  forked.send({
+    path: data.path,
+    skip: data.skip,
+    limit: data.limit,
   });
+
+  res.writeHead(200, {
+    'Transfer-Encoding': 'chunked',
+    'Content-Type': 'text/plain',
+  });
+
+  handleMessage = (data) => {
+    // console.log(data);
+    res.write(data);
+    close = () => {
+      res.end('\n');
+    };
+    forked.on('close', close);
+    res.on('close', function() {
+      console.log('Close');
+      forked.exit();
+    });
+  };
+
+  forked.on('message', handleMessage);
 };

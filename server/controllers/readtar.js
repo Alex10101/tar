@@ -1,37 +1,66 @@
 const fs = require('fs');
-const es = require('event-stream');
 const zlib = require('zlib');
+const ts = require('stream');
+const liner = new ts.Transform( {objectMode: true} );
+const pt = require('path');
+var EventEmitter = require('events').EventEmitter;
+var emitter = new EventEmitter;
+emitter.setMaxListeners(1000)
 
-readtar = (path, argSkip, argTo) => {
-  let from = 0;
-  const pass = argSkip || 0;
-  const to = (argTo || 50) - 1;
-  let call = 0;
+readtar = (path, argSkip, argLimit) => {
+  liner._transform = function(chunk, encoding, done) {
+    let data = chunk.toString();
+    if (this._lastLineData) data = this._lastLineData + data;
 
+    const lines = data.split(/(\r?\n)/);
+    this._lastLineData = lines.splice(lines.length-1, 1)[0];
+
+    lines.forEach(this.push.bind(this));
+    done();
+  };
+
+  liner._flush = function(done) {
+    if (this._lastLineData) this.push(this._lastLineData);
+    this._lastLineData = null;
+    done();
+  };
+
+  let i = 1;
+  const skip = argSkip || 0;
+  const limit = argLimit || 10;
 
   const stream = fs.createReadStream(path, {flags: 'r'})
+      .on('unpipe', (data) => {
+        console.log('piped');
+      })
       .pipe(zlib.createGunzip())
-      .pipe(es.split(/(\r?\n)/))
-      .pipe(es.mapSync( (line) => decorate(line)));
+      .pipe(liner);
 
-
-  function decorate(data) {
-    call++;
-    if(data === '\n') {
-      return data;
+  stream.on('data', (line) => {
+    // console.log('data', i);
+    // stream.pause();
+    if (i === 1) {
+      line = line.substr(line.lastIndexOf('\u0000') + 1);
     }
-    if (from === to) {
+    if (i === limit + 1) {
+      console.log('close');
       stream.destroy();
-      console.log('destroyed on line', from, ' call:', call);
-      return 0;
+      process.exit();
+      return;
     }
-    from++;
-    if (from > pass) {
-      return 'line : ' + from + ' data : ' + data.replace(/\u0000/gi, '');
+    if (line === '\n') {
+      process.send(line);
+      emitter.removeListener('message', process.send, stream);
+      return;
     }
-  }
-
-  return stream;
+    process.send(` Line ${i}, ${line} `);
+    emitter.removeListener('message', process.send, stream);
+    i++;
+  });
 };
 
-module.exports = readtar;
+process.on('message', (msg) => {
+  const skip = msg.skip || undefined;
+  const limit = msg.limit || undefined;
+  readtar(pt.join(__dirname, '../public/files/', msg.path), skip, limit);
+});

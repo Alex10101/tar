@@ -1,56 +1,33 @@
 const fs = require('fs');
-const es = require('event-stream');
 const zlib = require('zlib');
-const pt = require('path');
+const ts = require('stream');
+const liner = new ts.Transform( {objectMode: true} );
 
-readtar = (path, argSkip, argTo) => {
-  let from = 0;
-  const pass = argSkip || 0;
-  const to = (argTo || 50);
-  let call = 0;
-  let ps = es.pause()
+readtar = (data) => {
+  const stream = fs.createReadStream(data.path, {flags: 'r'});
 
-  const stream = fs.createReadStream(path, {flags: 'r'})
+  liner._transform = function(chunk, encoding, done) {
+    stream.pause();
+    let data = chunk.toString();
+    if (this._lastLineData) data = this._lastLineData + data;
+
+    const lines = data.split(/\n/);
+    this._lastLineData = lines.splice(lines.length-1, 1)[0];
+
+    lines.forEach(this.push.bind(this));
+    stream.resume();
+    done();
+  };
+
+  liner._flush = function(done) {
+    if (this._lastLineData) this.push(this._lastLineData);
+    this._lastLineData = null;
+    done();
+  };
+
+  return stream
       .pipe(zlib.createGunzip())
-      .pipe(es.split(/\n/))
-      .pipe(es.mapSync( (line) => {     
-        decorate(line);
-      }))
-      // .pipe(es.wait(function (err, body) {
-      //   if(!body) {
-      //     console.log()
-      //   }
-      // }))
-
-
-  function decorate(data) {
-    call++;
-
-    if (from > pass) {
-      process.send({
-        'data' : 'line : ' + from + ' data : ' + data.replace(/\u0000/gi, '') + '\n',
-        'line' : from,
-      });
-    }
-
-    stream.on('end', () => {
-      process.send('end')
-    })
-
-    if (from > to) {
-      stream.end();
-      console.log('destroyed on line', from);
-      // process.exit();
-      return;
-    }
-    from++;
-  }
-
-  return stream;
+      .pipe(liner);
 };
 
-process.on('message', (msg) => {
-  const skip = msg.skip || undefined;
-  const limit = msg.limit || undefined;
-  readtar(pt.join(__dirname, '../public/files/', msg.path), skip, limit);
-});
+module.exports = readtar;

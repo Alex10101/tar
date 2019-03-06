@@ -1,8 +1,7 @@
 const fs = require('fs');
 const pt = require('path');
-// const readtar = require('./readtar.js');
+const readtar = require('./readtar.js');
 const File = require('../models/fileSchema');
-const { fork } = require('child_process')
 
 const home = pt.join(__dirname, '..');
 const public = pt.join(home, 'public');
@@ -72,65 +71,38 @@ exports.upload = (req, res) => {
 };
 
 exports.read = (req, res) => {
+  let data = res.locals.data;
 
   res.writeHead(200, {
     'Transfer-Encoding': 'chunked',
     'Content-Type': 'text/plain',
   });
 
-  const data = res.locals.data;
-
-  const options = {
-    stdio: ['ipc']
-  }
-
-  const forked = fork('./controllers/readtar.js', [], options);
-  
-  forked.send({
-    path: data.path,
-    skip: data.skip,
-    limit: data.limit,
-  });
-
-  handleMessage = (msg) => {
-    if(msg === 'end') {
-      res.end();
-      forked.kill();
-      return;
-    }
-    res.write(msg.data);
-    if(msg.line === data.limit) {
-      res.end();
-      forked.kill();
-      return;
-    }
+  data = {
+    path: pt.join(filesDir, data.path),
+    from: data.skip || undefined,
+    to: data.limit || 10,
   };
+  let i = 1;
 
-  close = () => {
-    res.end('\n');
-  };
-  forked.on('close', close);
+  const stream = readtar(data, res)
+      .on('error', (err) => {
+        console.log(err);
+        res.end();
+      })
+      .on('data', (line) => {
+        if (i === data.to + 1) {
+          // console.log('close');
+          res.end('\n');
+          stream.unpipe();
+          return;
+        }
+        res.write('Line' + i + line.toString() + '\n');
+        i++;
+      });
+
   res.on('close', function() {
+    stream.unpipe();
     console.log('Close');
-    forked.kill();
   });
-
-  forked.on('message', handleMessage);
-
-  // const stream = readtar(pt.join(filesDir, data.path), data.skip, data.limit)
-  //     .on('error', (err) => {
-  //       console.log(err);
-  //       res.send('err');
-  //     })
-  //     .on('data', (data) => {
-  //       res.write(data)
-  //     })
-  //     .on('close', () => {
-  //       res.end('\n')
-  //     })
-
-  // res.on('close', function() {
-  //   stream.destroy();
-  //   console.log('Close received!');
-  // });
 };

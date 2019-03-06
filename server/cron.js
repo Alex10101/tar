@@ -1,7 +1,6 @@
 const fs = require('fs');
 const mongoose = require('mongoose');
 const File = require('./models/fileSchema');
-
 mongoose.set('useNewUrlParser', true);
 mongoose.connect(process.env.DB_URI || 'mongodb://localhost:27017/Tar');
 mongoose.connection.on('error', (err) => {

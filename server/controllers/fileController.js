@@ -78,24 +78,28 @@ exports.read = (req, res) => {
     skip: data.skip,
     limit: data.limit,
   });
+  let i = 1;
 
   res.writeHead(200, {
     'Transfer-Encoding': 'chunked',
     'Content-Type': 'text/plain',
   });
 
-  handleMessage = (data) => {
+  handleMessage = (line) => {
+    if (i === (data.limit + 1)) {
+      // console.log('close');
+      forked.kill();
+      return;
+    }
     // console.log(data);
-    res.write(data);
-    close = () => {
-      res.end('\n');
-    };
-    forked.on('close', close);
-    res.on('close', function() {
-      console.log('Close');
-      forked.exit();
-    });
+    res.write(line);
+    i++;
   };
+
+  res.on('close', function() {
+    console.log('Close');
+    forked.kill();
+  });
 
   forked.on('message', handleMessage);
 };

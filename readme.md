@@ -1,6 +1,3 @@
-Next targets : apply asserts, 
-resolve Path traversal and other 
-security vulnerabilities
 
 __Usage :__
 
@@ -21,6 +18,9 @@ __Usage :__
 
 
 __Performance :__
+
+   Requesting 1.000.000 strings puts almost 1GB callbacks in memory.
+   With pm2 this can handle 10 parallel requests.
 
     Upload(single request sending 4GB file):
     
@@ -57,6 +57,7 @@ localhost:3000
     htop(ctop, top, etc)
         displays CPU% from 35% to 60%
                  MEM% 0.5% o_O
+                 
 
 
 __Etc :__

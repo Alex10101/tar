@@ -1,7 +1,8 @@
 const fs = require('fs');
 const pt = require('path');
-const readtar = require('./readtar.js');
 const File = require('../models/fileSchema');
+const zlib = require('zlib');
+const ts = require('stream');
 
 const home = pt.join(__dirname, '..');
 const public = pt.join(home, 'public');
@@ -71,38 +72,57 @@ exports.upload = (req, res) => {
 };
 
 exports.read = (req, res) => {
-  let data = res.locals.data;
-
+  const data = res.locals.data;
   res.writeHead(200, {
     'Transfer-Encoding': 'chunked',
     'Content-Type': 'text/plain',
   });
 
-  data = {
-    path: pt.join(filesDir, data.path),
-    from: data.skip || undefined,
-    to: data.limit || 10,
-  };
   let i = 1;
 
-  const stream = readtar(data, res)
-      .on('error', (err) => {
-        console.log(err);
-        res.end();
-      })
-      .on('data', (line) => {
-        if (i === data.to + 1) {
-          // console.log('close');
-          res.end('\n');
-          stream.unpipe();
+  const liner = new ts.Transform( {objectMode: true} );
+  liner._transform = function(chunk, encoding, done) {
+
+    if(chunk) {
+      let arr;
+      if (this._lastLineData) arr = this._lastLineData + arr;
+      arr = chunk.toString().split(/\n/); 
+      map = (line) => {
+        if(i > data.limit + 1){
+          console.log('die')
+          stream.destroy()
+          this.end();
           return;
+        } else {
+          this.push('line ' + i + ' ' + line.replace(/\u0000/g,'') + '\n')
+          i++
         }
-        res.write('Line' + i + line.toString() + '\n');
-        i++;
+      }     
+      arr.map((line) => {
+        map(line)
+        return
       });
+      done();
+    }
+
+  liner._flush = function(done) {
+      if (this._lastLineData) this.push(this._lastLineData);
+      this._lastLineData = null;
+      done();
+  };
+};
+
+  const stream = new fs.createReadStream(pt.join(filesDir, data.path))
+      .pipe(zlib.createGunzip())
+      .pipe(liner)
+      .pipe(res)
+
+  stream.on('end', function() {
+    res.end();
+  });
 
   res.on('close', function() {
-    stream.unpipe();
     console.log('Close');
+    stream.destroy();
   });
 };

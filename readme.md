@@ -19,7 +19,7 @@ __Usage :__
 __Performance :__
 
     Abstract : 
-    This can handle requests to read, unzip & transform data from 300mb txt file with 1.000.000 strings.
+    This can handle requests to read, unzip & transform data from 300mb txt.tar.gz file with 1.000.000 strings.
     Processor usage grows above 30% and memory usage on each request grows only on 50mb.
     
 

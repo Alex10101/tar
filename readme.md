@@ -1,7 +1,3 @@
-Next targets : apply asserts, 
-resolve Path traversal and other 
-security vulnerabilities
-
 __Usage :__
 
     Add database called "Tar" and collection called "files" in your MongoDB 
@@ -22,6 +18,10 @@ __Usage :__
 
 __Performance :__
 
+    Abstract : This can handle requests to read, unzip & transform data from 300mb file with 1.000.000 strings.
+    Processor usage grows above 30% and memory usage on each request grows only on 50mb.
+    
+
     Upload(single request sending 4GB file):
     
 ~~~~
@@ -35,8 +35,8 @@ localhost:3000
         user 0m1.106s
         sys	0m2.684s
         
-    I can't see performance or memory increasing with htop. 
-    This dosen't grow. 
+    Can't see performance increasing with htop while downloading. 
+    Memory usage looks over ~5mb. 
 
     Fail here : 
         When 4GB file uploads but the specified title exists
@@ -46,7 +46,7 @@ localhost:3000
         
     Read(single request) :
     
-    $ time curl "http://localhost:3000/read?path=file.tar.gz&limit=300000"
+    $ time curl "http://localhost:3000/read?path=file.tar.gz&limit=1000000"
     
     shows :
     
@@ -56,7 +56,7 @@ localhost:3000
     
     htop(ctop, top, etc)
         displays CPU% from 35% to 60%
-                 MEM% 0.5% o_O
+                 MEM% 0.5
 
 
 __Etc :__

@@ -1,4 +1,4 @@
-__I misunderstood the task here. Please switch into the branch called normal.__
+__I misunderstood the task here. Please switch into the branch named other.__
 
 
 

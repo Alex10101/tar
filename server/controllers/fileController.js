@@ -3,21 +3,24 @@ const pt = require('path');
 const File = require('../models/fileSchema');
 const zlib = require('zlib');
 const ts = require('stream');
+const queue = require('./queue')
 
 const home = pt.join(__dirname, '..');
 const public = pt.join(home, 'public');
 const filesDir = pt.join(public, 'files');
 
+queue.push()
+
 exports.index = (req, res) => {
   const data = res.locals.data;
 
   File.find(data.searchBy)
-      .skip(data.skip)
-      .limit(data.limit)
-      .exec((err, data) => {
-        if (err) throw err;
-        res.send(data);
-      });
+    .skip(data.skip)
+    .limit(data.limit)
+    .exec((err, data) => {
+      if (err) throw err;
+      res.send(data);
+    });
 };
 
 
@@ -42,11 +45,12 @@ exports.upload = (req, res) => {
         title: data.title || undefined,
         filename: data.filename,
         description: data.description || undefined,
-        expire: data.expired || undefined,
-        timestamp: new Date(data.expired).getTime() || undefined,
+        expire: data.expire || undefined,
+        timestamp: new Date(data.expire).getTime() || undefined,
       });
 
       file.save(file);
+      queue.push(file.expire)
       req.files.file.mv(path, (err) => {
         if (err) throw err;
         res.send({
@@ -74,33 +78,27 @@ exports.upload = (req, res) => {
 exports.read = (req, res) => {
   const data = res.locals.data;
   res.writeHead(200, {
-    'Transfer-Encoding': 'chunked',
-    'Content-Type': 'text/plain',
+    'Transfer-Encoding': 'chunked'
   });
 
   let i = 1;
 
   const liner = new ts.Transform( {objectMode: true} );
   liner._transform = function(chunk, encoding, done) {
-
     if(chunk) {
       let arr;
-      if (this._lastLineData) arr = this._lastLineData + arr;
-      arr = chunk.toString().split(/\n/); 
+      if (this._lastLineData) {
+        console.log(this._lastLineData)
+        arr.push(this._lastLineData)
+      };
+      arr = chunk.toString().split(/\n/);
       map = (line) => {
-        if(i > data.limit + 1){
-          console.log('die')
-          stream.destroy()
-          this.end();
-          return;
-        } else {
-          this.push('line ' + i + ' ' + line.replace(/\u0000/g,'') + '\n')
-          i++
-        }
+          if(i) {
+            this.push('Line ' + i + ' ' + line.replace(/\u0000/g,'') + '\n')
+          }
       }     
       arr.map((line) => {
         map(line)
-        return
       });
       done();
     }
@@ -115,9 +113,21 @@ exports.read = (req, res) => {
   const stream = new fs.createReadStream(pt.join(filesDir, data.path))
       .pipe(zlib.createGunzip())
       .pipe(liner)
-      .pipe(res)
+
+  liner.on('data', (line) => {
+    if(i === data.limit){
+      console.log('stream.destroy')
+      liner.end();
+      stream.destroy();
+    }
+    i++
+  })
+
+  stream.pipe(res)
 
   stream.on('end', function() {
+    console.log('res.end')
+    liner.end();
     res.end();
   });
 

@@ -13,28 +13,31 @@ exports.index = (req, res, next) => {
   };
 
   Joi.validate(data, schemas.index)
-      .then((data, err) => {
-        if (err) {
-          res.send(err);
-          return;
-        }
+      .catch((err) => {
+        res.status(422).send({ 
+          data: data,  
+          err : err.details[0].message.replace(/["]/ig, '')
+        });
+        return;
+      })
+      .then((pass) => {
+        if (pass) {
+          const skip = data['skip'] = Number(data.skip) || undefined;
+          const limit = data['limit'] = Number(data.limit) || undefined;
 
-        const skip = data['skip'] = Number(data.skip) || undefined;
-        const limit = data['limit'] = Number(data.limit) || undefined;
-
-        if (skip && limit) {
-          if (skip > limit) {
-            throw new Error('argSkip > argTo');
+          if (skip && limit) {
+            if (skip > limit) {
+              throw new Error('argSkip > argTo');
+            }
+          } else if (skip && !limit) {
+            if (skip > 10) {
+              throw new Error('skip > 10 & !argTo');
+            }
           }
-        } else if (skip && !limit) {
-          if (skip > 10) {
-            throw new Error('skip > 10 & !argTo');
-          }
+
+          res.locals.data = data;
+          next();
         }
-
-
-        res.locals.data = data;
-        next();
       });
 };
 
@@ -63,10 +66,23 @@ exports.upload = (req, res, next) => {
       const head = spc.substr(0, i);
       const tail = name.substr(name.indexOf('.'));
       data['filename'] = head + tail;
+      delete data.specify
     }
   }
-  res.locals.data = data;
-  next();
+  Joi.validate(data, schemas.upload)
+    .catch((err) => {
+      res.status(422).send({ 
+        data: data,  
+        err : err.details[0].message.replace(/["]/ig, '')
+      });
+      return;
+    })
+  .then((pass) => {
+    if(pass) {
+      res.locals.data = data;
+      next();
+    }
+  })
 };
 
 exports.read = (req, res, next) => {

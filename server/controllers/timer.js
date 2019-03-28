@@ -66,6 +66,7 @@ async function push(newdate) {
     newdate = newdate.getTime()
     let newtimer = newdate - new Date().getTime()
     if(newtimer < timer) {
+      console.log(newtimer, timer)
       clearTimeout(queue)
       timer = newtimer
       queue = setTimeout(() => removeExpired(), newtimer)

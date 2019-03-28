@@ -9,7 +9,7 @@ exports.index = (req, res, next) => {
   const data = {
     skip: get(req, 'skip', '0'),
     limit: get(req, 'limit', '10'),
-    search_by: get(req, 'search_by', {}),
+    search_by: JSON.parse(get(req, 'search_by', '{}')),
   };
 
   Joi.validate(data, schemas.index)
@@ -22,18 +22,8 @@ exports.index = (req, res, next) => {
       })
       .then((pass) => {
         if (pass) {
-          const skip = data['skip'] = Number(data.skip) || undefined;
-          const limit = data['limit'] = Number(data.limit) || undefined;
-
-          if (skip && limit) {
-            if (skip > limit) {
-              throw new Error('argSkip > argTo');
-            }
-          } else if (skip && !limit) {
-            if (skip > 10) {
-              throw new Error('skip > 10 & !argTo');
-            }
-          }
+          data['skip'] = Number(data.skip);
+          data['limit'] = Number(data.limit);
 
           res.locals.data = data;
           next();
@@ -104,18 +94,8 @@ exports.read = (req, res, next) => {
         return;
       }
 
-      const skip = data['skip'] = Number(data.skip) || undefined;
-      const limit = data['limit'] = Number(data.limit) || undefined;
-
-      if (skip && limit) {
-        if (skip > limit) {
-          throw new Error('argSkip > argTo');
-        }
-      } else if (skip && !limit) {
-        if (skip > 10) {
-          throw new Error('skip > 10 & !argTo');
-        }
-      }
+      data['skip'] = Number(data.skip);
+      data['limit'] = Number(data.limit);
 
       res.locals.data = data;
       next();

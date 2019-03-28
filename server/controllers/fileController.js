@@ -3,18 +3,15 @@ const pt = require('path');
 const File = require('../models/fileSchema');
 const zlib = require('zlib');
 const ts = require('stream');
-const queue = require('./queue')
+const timer = require('./timer')
 
-const home = pt.join(__dirname, '..');
-const public = pt.join(home, 'public');
-const filesDir = pt.join(public, 'files');
+const filesDir = pt.join(__dirname, '..', 'public', 'files');
 
-queue.push()
+timer.push()
 
 exports.index = (req, res) => {
   const data = res.locals.data;
-
-  File.find(data.searchBy)
+  File.find(data.search_by)
     .skip(data.skip)
     .limit(data.limit)
     .exec((err, data) => {
@@ -42,18 +39,17 @@ exports.upload = (req, res) => {
   function post() {
     function insert() {
       const file = new File({
-        title: data.title || undefined,
+        title: data.title,
         filename: data.filename,
-        description: data.description || undefined,
-        expire: data.expire || undefined,
-        timestamp: new Date(data.expire).getTime() || undefined,
+        description: data.description,
+        expire: data.expire,
+        timestamp: new Date(data.expire).getTime(),
       });
 
       file.save(file);
-      console.log('file.save(file);')
       req.files.file.mv(path, (err) => {
         if (err) throw err;
-        queue.push(file.expire)
+        timer.push(file.expire)
         res.send({
           msg: {
             uploaded: data.filename,
@@ -79,24 +75,31 @@ exports.upload = (req, res) => {
 exports.read = (req, res) => {
   const data = res.locals.data;
   res.writeHead(200, {
+    'Content-Type': 'text/plain',
     'Transfer-Encoding': 'chunked'
   });
 
   let i = 1;
 
+  if(data.skip > 0) {
+    data.limit = data.skip + data.limit
+  }
+
   const liner = new ts.Transform( {objectMode: true} );
   liner._transform = function(chunk, encoding, done) {
     if(chunk) {
-      let arr;
+      let arr = [];
       if (this._lastLineData) {
         console.log(this._lastLineData)
         arr.push(this._lastLineData)
       };
       arr = chunk.toString().split(/\n/);
       map = (line) => {
-          if(i) {
-            this.push('Line ' + i + ' ' + line.replace(/\u0000/g,'') + '\n')
+          if(i >= data.skip) {
+            this.push(`Line ${i} ${line.replace(/\u0000/g,'')} \n`)
+            return
           }
+          this.push('')
       }     
       arr.map((line) => {
         map(line)

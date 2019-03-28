@@ -25,15 +25,18 @@
 					"urlencoded": [
 						{
 							"key": "skip",
-							"value": "10",
-							"type": "text",
-							"disabled": true
+							"value": "0",
+							"type": "text"
 						},
 						{
 							"key": "limit",
-							"value": "{\"a\":\"100\"}",
-							"type": "text",
-							"disabled": true
+							"value": "10",
+							"type": "text"
+						},
+						{
+							"key": "search_by",
+							"value": "{ \"title\": \"Sample title\"}",
+							"type": "text"
 						},
 						{
 							"key": "Consumbtion",
@@ -59,7 +62,7 @@
 					"query": [
 						{
 							"key": "skip",
-							"value": "0",
+							"value": "1",
 							"description": "optional",
 							"disabled": true
 						},
@@ -71,7 +74,7 @@
 						},
 						{
 							"key": "search_by",
-							"value": "{ \"title\" : \"Sample title\" }",
+							"value": "{ \"title\":\"Sample title\"}",
 							"description": "optional",
 							"disabled": true
 						},
@@ -105,26 +108,23 @@
 					"urlencoded": [
 						{
 							"key": "path",
-							"value": "itcont.txt",
-							"type": "text",
-							"disabled": true
+							"value": "file.tar.gz",
+							"type": "text"
 						},
 						{
 							"key": "skip",
-							"value": "5",
-							"type": "text",
-							"disabled": true
+							"value": "0",
+							"type": "text"
 						},
 						{
 							"key": "limit",
-							"value": "1",
-							"type": "text",
-							"disabled": true
+							"value": "1000",
+							"type": "text"
 						}
 					]
 				},
 				"url": {
-					"raw": "http://localhost:3000/read?path=itcont.txt&limit=400000",
+					"raw": "http://localhost:3000/read",
 					"protocol": "http",
 					"host": [
 						"localhost"
@@ -132,16 +132,6 @@
 					"port": "3000",
 					"path": [
 						"read"
-					],
-					"query": [
-						{
-							"key": "path",
-							"value": "itcont.txt"
-						},
-						{
-							"key": "limit",
-							"value": "400000"
-						}
 					]
 				}
 			},
@@ -164,7 +154,7 @@
 					"formdata": [
 						{
 							"key": "data",
-							"value": "{\"specify\" : \"434.txt\", \"name\":\"1.tar.gz\",\"title\":\"Saple title\",\"description\":\"Sample Description\",\"expired\":\"2019-02-15T12:31:36.846Z\"}\n",
+							"value": "{\"specify\" : \"42.txt\", \"title\":\"Sample title\",\"description\":\"Sample Description\",\"expire\":\"2019-03-28T13:53:39.393Z\"}\n",
 							"description": "if (data.specify) - changes filename",
 							"type": "text"
 						},

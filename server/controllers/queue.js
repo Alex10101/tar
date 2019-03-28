@@ -30,7 +30,9 @@ removeExpired = () => {
 
   File.find(find).exec(function(err, items) {
     if (err) throw err;
-    console.log('Removed :', items)
+    if(items.length) {
+      console.log('Removed :', items)
+    }
     remove(items);
   });
 }
@@ -67,7 +69,7 @@ async function push(newdate) {
       clearTimeout(queue)
       timer = newtimer
       queue = setTimeout(() => removeExpired(), newtimer)
-      console.log('Next timeout in', new Date(time).getHours(), ':', new Date(time).getMinutes())
+      console.log('Next timeout in', new Date(newdate).getHours(), ':', new Date(newdate).getMinutes())
       return
     }
   }

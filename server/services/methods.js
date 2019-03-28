@@ -9,7 +9,7 @@ exports.index = (req, res, next) => {
   const data = {
     skip: get(req, 'skip', '0'),
     limit: get(req, 'limit', '10'),
-    searchBy: get(req, 'search_by', {}),
+    search_by: get(req, 'search_by', {}),
   };
 
   Joi.validate(data, schemas.index)

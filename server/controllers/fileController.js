@@ -50,9 +50,10 @@ exports.upload = (req, res) => {
       });
 
       file.save(file);
-      queue.push(file.expire)
+      console.log('file.save(file);')
       req.files.file.mv(path, (err) => {
         if (err) throw err;
+        queue.push(file.expire)
         res.send({
           msg: {
             uploaded: data.filename,

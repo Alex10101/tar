@@ -10,7 +10,7 @@ exports.upload = Joi.object().keys({
 exports.index = Joi.object().keys({
   skip: Joi.string().min(1).max(5).regex(/\D/, {invert: true}),
   limit: Joi.string().min(1).max(5).regex(/\D/, {invert: true}),
-  searchBy: this.upload,
+  search_by: this.upload,
 });
 
 exports.read = Joi.object().keys({
